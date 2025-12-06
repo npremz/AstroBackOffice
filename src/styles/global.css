@@ -117,4 +117,47 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Typographic scale based on 1.414 ratio (augmented fourth) */
+  h1 {
+    font-size: 2.827rem; /* 1.414^3 */
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  h2 {
+    font-size: 1.999rem; /* 1.414^2 */
+    line-height: 1.3;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  h3 {
+    font-size: 1.414rem; /* 1.414^1 */
+    line-height: 1.4;
+    font-weight: 600;
+  }
+
+  h4 {
+    font-size: 1rem; /* base */
+    line-height: 1.5;
+    font-weight: 600;
+  }
+
+  /* Cursor pointer for interactive elements */
+  button,
+  [role="button"],
+  [type="button"],
+  [type="submit"],
+  a,
+  label[for],
+  select {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [disabled] {
+    cursor: not-allowed;
+  }
 }

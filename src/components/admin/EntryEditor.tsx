@@ -1,4 +1,13 @@
 import { useState, useEffect } from 'react';
+import { ChevronLeft, Save, AlertCircle, Image as ImageIcon, FileText } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 
 interface Collection {
   id: number;
@@ -29,15 +38,22 @@ interface Props {
 
 export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }: Props) {
   const [formData, setFormData] = useState<Record<string, any>>({});
-  const [slug, setSlug] = useState('');
+  const [slugSuffix, setSlugSuffix] = useState(''); // Only the part after collection name
   const [template, setTemplate] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  // Full slug combining collection name + suffix
+  const fullSlug = `${collection.slug}/${slugSuffix}`;
+
   useEffect(() => {
     if (entry) {
       setFormData(entry.data);
-      setSlug(entry.slug);
+      // Extract suffix from full slug (remove collection prefix)
+      const suffix = entry.slug.startsWith(`${collection.slug}/`)
+        ? entry.slug.substring(`${collection.slug}/`.length)
+        : entry.slug;
+      setSlugSuffix(suffix);
       setTemplate(entry.template);
     } else {
       // Initialize with empty values
@@ -46,7 +62,7 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
         initialData[field.key] = '';
       });
       setFormData(initialData);
-      setSlug('');
+      setSlugSuffix('');
       setTemplate(`${collection.slug.charAt(0).toUpperCase() + collection.slug.slice(1)}Layout`);
     }
   }, [entry, collection]);
@@ -54,12 +70,12 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
   const handleFieldChange = (key: string, value: any) => {
     setFormData(prev => ({ ...prev, [key]: value }));
 
-    // Auto-generate slug from title if it's a new entry
+    // Auto-generate slug suffix from title if it's a new entry
     if (key === 'title' && !entry) {
       const slugified = value.toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
-      setSlug(`${collection.slug}/${slugified}`);
+      setSlugSuffix(slugified);
     }
   };
 
@@ -77,7 +93,7 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
       }
     }
 
-    if (!slug) {
+    if (!slugSuffix) {
       setError('Slug is required');
       setSaving(false);
       return;
@@ -86,7 +102,7 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
     try {
       const payload = {
         collectionId: collection.id,
-        slug,
+        slug: fullSlug, // Use the combined full slug
         data: formData,
         template
       };
@@ -105,9 +121,20 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
 
       if (!response.ok) throw new Error('Failed to save');
 
+      const entryTitle = formData.title || fullSlug;
+      toast.success(
+        entry ? 'Entry updated successfully!' : 'Entry created successfully!',
+        {
+          description: `"${entryTitle}" has been saved.`,
+        }
+      );
+
       onSaveSuccess();
     } catch (err) {
       setError('Failed to save entry. Please try again.');
+      toast.error('Failed to save entry', {
+        description: 'Please check your inputs and try again.',
+      });
     } finally {
       setSaving(false);
     }
@@ -119,68 +146,107 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
     switch (field.type) {
       case 'text':
         return (
-          <input
+          <Input
             type="text"
+            id={`field-${field.key}`}
             value={value}
             onChange={(e) => handleFieldChange(field.key, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder={`Enter ${field.label.toLowerCase()}`}
             required={field.required}
           />
         );
 
       case 'textarea':
         return (
-          <textarea
+          <Textarea
+            id={`field-${field.key}`}
             value={value}
             onChange={(e) => handleFieldChange(field.key, e.target.value)}
+            placeholder={`Enter ${field.label.toLowerCase()}`}
             rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required={field.required}
           />
         );
 
       case 'number':
         return (
-          <input
+          <Input
             type="number"
+            id={`field-${field.key}`}
             value={value}
             onChange={(e) => handleFieldChange(field.key, parseFloat(e.target.value) || 0)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="0"
             required={field.required}
           />
         );
 
       case 'richtext':
         return (
-          <textarea
-            value={value}
-            onChange={(e) => handleFieldChange(field.key, e.target.value)}
-            rows={8}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-            placeholder="HTML content..."
-            required={field.required}
-          />
+          <div className="space-y-2">
+            <Textarea
+              id={`field-${field.key}`}
+              value={value}
+              onChange={(e) => handleFieldChange(field.key, e.target.value)}
+              placeholder="<p>HTML content...</p>"
+              rows={10}
+              className="font-mono text-sm"
+              required={field.required}
+            />
+            <p className="text-xs text-muted-foreground">
+              HTML/Markdown content will be rendered on the page
+            </p>
+          </div>
         );
 
       case 'image':
         return (
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => handleFieldChange(field.key, e.target.value)}
-            placeholder="/images/..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required={field.required}
-          />
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                id={`field-${field.key}`}
+                value={value}
+                onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                placeholder="/images/example.jpg or https://..."
+                required={field.required}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                disabled
+                title="Image upload coming soon"
+              >
+                <ImageIcon className="h-4 w-4" />
+              </Button>
+            </div>
+            {value && (
+              <div className="rounded-lg border p-2 bg-muted/50">
+                <img
+                  src={value}
+                  alt="Preview"
+                  className="w-full h-48 object-cover rounded"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Enter an image URL or path
+            </p>
+          </div>
         );
 
       default:
         return (
-          <input
+          <Input
             type="text"
+            id={`field-${field.key}`}
             value={value}
             onChange={(e) => handleFieldChange(field.key, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder={`Enter ${field.label.toLowerCase()}`}
             required={field.required}
           />
         );
@@ -188,97 +254,153 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
   };
 
   return (
-    <div>
-      <div className="flex items-center gap-4 mb-6">
-        <button
-          onClick={onBack}
-          className="text-gray-600 hover:text-gray-900"
-        >
-          ← Back
-        </button>
-        <h2 className="text-xl font-semibold text-gray-900">
-          {entry ? 'Edit Entry' : 'New Entry'}
-        </h2>
+    <div className="space-y-6">
+      {/* Header - Mobile First */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBack}
+            className="hidden md:flex"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h2>
+              {entry ? 'Edit Entry' : 'New Entry'}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1 capitalize">
+              {collection.slug}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Meta Fields */}
-          <div className="border-b border-gray-200 pb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Meta Information</h3>
-
-            <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Meta Information Card */}
+        <Card className="border-l-4 border-l-amber-500">
+          <CardHeader className="bg-gradient-to-r from-amber-50/50 to-transparent dark:from-amber-950/20">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-md bg-amber-100 dark:bg-amber-900/30">
+                <Save className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Slug <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  placeholder="collection/my-entry"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">URL path for this entry</p>
+                <CardTitle>Meta Information</CardTitle>
+                <CardDescription>
+                  Configure URL and template settings
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Slug with collection prefix */}
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="slugSuffix">
+                  Slug <span className="text-destructive">*</span>
+                </Label>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center bg-muted px-3 py-2 rounded-md border border-input text-sm text-muted-foreground font-mono">
+                    {collection.slug}/
+                  </div>
+                  <Input
+                    id="slugSuffix"
+                    type="text"
+                    value={slugSuffix}
+                    onChange={(e) => setSlugSuffix(e.target.value)}
+                    placeholder="my-entry"
+                    required
+                    className="flex-1"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  URL path: <code className="bg-muted px-1 rounded">/{fullSlug}</code>
+                </p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Template
-                </label>
-                <input
+              {/* Template */}
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="template">Template</Label>
+                <Input
+                  id="template"
                   type="text"
                   value={template}
                   onChange={(e) => setTemplate(e.target.value)}
                   placeholder="LayoutName"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                <p className="text-xs text-gray-500 mt-1">Astro layout component name</p>
+                <p className="text-xs text-muted-foreground">
+                  Astro layout component (e.g., ServiceLayout, BlogLayout)
+                </p>
               </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Dynamic Fields from Schema */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Content</h3>
-            <div className="space-y-4">
-              {collection.schema.map((field) => (
-                <div key={field.key}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {field.label}
-                    {field.required && <span className="text-red-500 ml-1">*</span>}
-                  </label>
-                  {renderField(field)}
+        {/* Content Fields Card */}
+        <Card className="border-l-4 border-l-emerald-500">
+          <CardHeader className="bg-gradient-to-r from-emerald-50/50 to-transparent dark:from-emerald-950/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-emerald-100 dark:bg-emerald-900/30">
+                  <FileText className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
-              ))}
+                <div>
+                  <CardTitle>Content</CardTitle>
+                  <CardDescription className="mt-1.5">
+                    Fill in the fields for this entry
+                  </CardDescription>
+                </div>
+              </div>
+              <Badge variant="outline" className="bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900/50 dark:text-emerald-300">
+                {collection.schema.length} {collection.schema.length === 1 ? 'field' : 'fields'}
+              </Badge>
             </div>
-          </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {collection.schema.map((field) => (
+              <div key={field.key} className="space-y-2 p-4 rounded-lg bg-emerald-50/30 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-900/30">
+                <Label htmlFor={`field-${field.key}`} className="flex items-center gap-2">
+                  <span>{field.label}</span>
+                  {field.required && <span className="text-destructive">*</span>}
+                  <Badge variant="secondary" className="ml-auto text-xs font-normal bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
+                    {field.type}
+                  </Badge>
+                </Label>
+                {renderField(field)}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
-            </div>
-          )}
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saving ? 'Saving...' : entry ? 'Update Entry' : 'Create Entry'}
-            </button>
-            <button
-              type="button"
-              onClick={onBack}
-              className="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
+        {/* Actions - Mobile First */}
+        <div className="flex flex-col-reverse sm:flex-row gap-3 sticky bottom-4 bg-background p-4 -mx-4 border-t sm:static sm:bg-transparent sm:p-0 sm:border-0">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBack}
+            className="w-full sm:w-auto"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={saving}
+            className="w-full sm:w-auto sm:ml-auto bg-emerald-600 hover:bg-emerald-700"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {saving ? 'Saving...' : entry ? 'Update Entry' : 'Create Entry'}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }

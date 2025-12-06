@@ -1,4 +1,14 @@
 import { useState, useEffect } from 'react';
+import { Plus, Trash2, ChevronLeft, Save, AlertCircle, Layers } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 
 interface FieldSchema {
   label: string;
@@ -114,170 +124,250 @@ export default function CollectionEditor({ collection, onBack, onSaveSuccess }: 
 
       if (!response.ok) throw new Error('Failed to save');
 
+      toast.success(
+        collection ? 'Collection updated successfully!' : 'Collection created successfully!',
+        {
+          description: `The collection "${slug}" has been saved.`,
+        }
+      );
+
       onSaveSuccess();
     } catch (err) {
       setError('Failed to save collection. Please try again.');
+      toast.error('Failed to save collection', {
+        description: 'Please check your inputs and try again.',
+      });
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div>
-      <div className="flex items-center gap-4 mb-6">
-        <button
-          onClick={onBack}
-          className="text-gray-600 hover:text-gray-900"
-        >
-          ← Back
-        </button>
-        <h2 className="text-xl font-semibold text-gray-900">
-          {collection ? 'Edit Collection' : 'New Collection'}
-        </h2>
-      </div>
-
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Collection Slug */}
+    <div className="space-y-6">
+      {/* Header - Mobile First */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBack}
+            className="hidden md:flex"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Collection Slug <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              placeholder="e.g., products, blog-posts"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Unique identifier for this collection (lowercase, hyphens allowed)
+            <h2>
+              {collection ? 'Edit Collection' : 'New Collection'}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Define the structure for your content
             </p>
           </div>
+        </div>
+      </div>
 
-          {/* Schema Builder */}
-          <div className="border-t border-gray-200 pt-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Schema Fields</h3>
-              <button
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Collection Slug Card */}
+        <Card className="border-l-4 border-l-purple-500">
+          <CardHeader className="bg-gradient-to-r from-purple-50/50 to-transparent dark:from-purple-950/20">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-md bg-purple-100 dark:bg-purple-900/30">
+                <Layers className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <CardTitle>Collection Details</CardTitle>
+                <CardDescription>
+                  Set the unique identifier for this collection
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="slug">
+                Collection Slug <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="slug"
+                type="text"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                placeholder="e.g., products, blog-posts"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Lowercase letters, numbers, and hyphens only
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Schema Builder Card */}
+        <Card className="border-l-4 border-l-indigo-500">
+          <CardHeader className="bg-gradient-to-r from-indigo-50/50 to-transparent dark:from-indigo-950/20">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-indigo-100 dark:bg-indigo-900/30">
+                  <Plus className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div>
+                  <CardTitle>Schema Fields</CardTitle>
+                  <CardDescription className="mt-1.5">
+                    Define the fields for entries in this collection
+                  </CardDescription>
+                </div>
+              </div>
+              <Button
                 type="button"
                 onClick={handleAddField}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                size="sm"
+                className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700"
               >
-                + Add Field
-              </button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Field
+              </Button>
             </div>
-
+          </CardHeader>
+          <CardContent className="space-y-4">
             {fields.length === 0 ? (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-                <p className="text-gray-500 mb-3">No fields yet</p>
-                <button
+              <div className="flex flex-col items-center justify-center py-12 px-4 border-2 border-dashed rounded-lg">
+                <p className="text-sm text-muted-foreground mb-4">
+                  No fields yet. Add your first field to get started.
+                </p>
+                <Button
                   type="button"
                   onClick={handleAddField}
-                  className="text-blue-600 hover:text-blue-800"
+                  variant="outline"
+                  size="sm"
                 >
-                  Add your first field
-                </button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Field
+                </Button>
               </div>
             ) : (
               <div className="space-y-4">
                 {fields.map((field, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Field Label <span className="text-red-500">*</span>
-                        </label>
-                        <input
+                  <div
+                    key={index}
+                    className="rounded-lg border border-indigo-200 bg-indigo-50/30 dark:border-indigo-800 dark:bg-indigo-950/20 p-4 space-y-4"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <Badge variant="outline" className="bg-indigo-100 text-indigo-700 border-indigo-300 dark:bg-indigo-900/50 dark:text-indigo-300">
+                        Field {index + 1}
+                      </Badge>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveField(index)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Remove
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Field Label */}
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor={`field-label-${index}`}>
+                          Field Label <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id={`field-label-${index}`}
                           type="text"
                           value={field.label}
                           onChange={(e) => handleFieldChange(index, { label: e.target.value })}
                           placeholder="e.g., Product Name"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                           required
                         />
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Field Type
-                        </label>
-                        <select
+                      {/* Field Type */}
+                      <div className="space-y-2">
+                        <Label htmlFor={`field-type-${index}`}>Field Type</Label>
+                        <Select
                           value={field.type}
-                          onChange={(e) => handleFieldChange(index, { type: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                          onValueChange={(value) => handleFieldChange(index, { type: value })}
                         >
-                          {FIELD_TYPES.map(type => (
-                            <option key={type.value} value={type.value}>
-                              {type.label}
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger id={`field-type-${index}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {FIELD_TYPES.map(type => (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Field Key (auto-generated)
-                        </label>
-                        <input
+                      {/* Field Key (auto-generated) */}
+                      <div className="space-y-2">
+                        <Label htmlFor={`field-key-${index}`}>
+                          Field Key <span className="text-xs text-muted-foreground">(auto)</span>
+                        </Label>
+                        <Input
+                          id={`field-key-${index}`}
                           type="text"
                           value={field.key}
                           readOnly
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+                          className="bg-muted"
                         />
                       </div>
 
-                      <div className="flex items-end gap-3">
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={field.required}
-                            onChange={(e) => handleFieldChange(index, { required: e.target.checked })}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          <span className="text-sm text-gray-700">Required</span>
-                        </label>
-
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveField(index)}
-                          className="ml-auto px-3 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                      {/* Required Checkbox */}
+                      <div className="flex items-center space-x-2 pt-6">
+                        <Checkbox
+                          id={`field-required-${index}`}
+                          checked={field.required}
+                          onCheckedChange={(checked) =>
+                            handleFieldChange(index, { required: checked as boolean })
+                          }
+                        />
+                        <Label
+                          htmlFor={`field-required-${index}`}
+                          className="text-sm font-normal cursor-pointer"
                         >
-                          Remove
-                        </button>
+                          Required field
+                        </Label>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </div>
+          </CardContent>
+        </Card>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
-            </div>
-          )}
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saving ? 'Saving...' : collection ? 'Update Collection' : 'Create Collection'}
-            </button>
-            <button
-              type="button"
-              onClick={onBack}
-              className="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
+        {/* Actions - Mobile First */}
+        <div className="flex flex-col-reverse sm:flex-row gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBack}
+            className="w-full sm:w-auto"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={saving}
+            className="w-full sm:w-auto sm:ml-auto bg-purple-600 hover:bg-purple-700"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {saving ? 'Saving...' : collection ? 'Update Collection' : 'Create Collection'}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }
