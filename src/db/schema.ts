@@ -30,3 +30,18 @@ export const revisions = sqliteTable('revisions', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   status: text('status').notNull(), // 'draft', 'archived'
 });
+
+// Content Modules (Single-use content for fixed pages like About, Hero, Contact)
+export const contentModules = sqliteTable('content_modules', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  slug: text('slug').unique().notNull(),
+  name: text('name').notNull(),
+  schema: text('schema', { mode: 'json' }).notNull().$type<Array<{
+    label: string;
+    type: string;
+    key: string;
+    required: boolean;
+  }>>(),
+  data: text('data', { mode: 'json' }).notNull().$type<Record<string, any>>(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+});
