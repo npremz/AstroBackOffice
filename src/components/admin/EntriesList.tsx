@@ -92,85 +92,96 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit }: Pr
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header - Mobile First */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
+    <div className="space-y-8">
+      {/* Editorial Header */}
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between stagger-fade-in stagger-1">
+        <div className="flex items-start gap-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={onBack}
-            className="hidden md:flex"
+            className="hidden md:flex hover-lift mt-1"
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <div>
-            <h2 className="capitalize">
+          <div className="space-y-2">
+            <h2 className="font-serif text-3xl sm:text-4xl font-semibold capitalize tracking-tight text-foreground">
               {collection.slug}
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Manage entries in this collection
+            <p className="text-sm sm:text-base text-muted-foreground font-medium tracking-wide max-w-2xl">
+              Manage and organize entries in your collection
             </p>
           </div>
         </div>
-        <Button onClick={onCreate} className="w-full sm:w-auto bg-green-600 hover:bg-green-700">
+        <Button
+          onClick={onCreate}
+          className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
+          size="lg"
+        >
           <Plus className="h-4 w-4 mr-2" />
-          New Entry
+          <span className="font-semibold">New Entry</span>
         </Button>
       </div>
 
       {/* Loading State */}
       {loading ? (
-        <Card>
-          <CardContent className="flex items-center justify-center py-12">
+        <Card className="card-float stagger-fade-in stagger-2">
+          <CardContent className="flex items-center justify-center py-16">
             <div className="flex items-center gap-3 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span>Loading entries...</span>
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <span className="font-medium">Loading entries...</span>
             </div>
           </CardContent>
         </Card>
       ) : entries.length === 0 ? (
         /* Empty State */
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12 px-4">
-            <div className="rounded-full bg-muted p-4 mb-4">
-              <FileText className="h-10 w-10 text-muted-foreground" />
+        <Card className="border-dashed border-2 border-border/50 bg-gradient-to-br from-muted/30 to-background stagger-fade-in stagger-2">
+          <CardContent className="flex flex-col items-center justify-center py-16 px-4">
+            <div className="rounded-2xl bg-gradient-to-br from-accent/10 to-primary/10 p-6 mb-6">
+              <FileText className="h-12 w-12 text-accent" />
             </div>
-            <h3 className="mb-2">No entries yet</h3>
-            <p className="text-sm text-muted-foreground text-center mb-6 max-w-sm">
-              Create your first entry in the {collection.slug} collection
+            <h3 className="font-serif text-2xl font-semibold mb-2">No entries yet</h3>
+            <p className="text-sm sm:text-base text-muted-foreground text-center mb-8 max-w-md leading-relaxed">
+              Create your first entry in the <span className="font-semibold text-foreground">{collection.slug}</span> collection
             </p>
-            <Button onClick={onCreate}>
+            <Button
+              onClick={onCreate}
+              size="lg"
+              className="bg-accent hover:bg-accent/90 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
+            >
               <Plus className="h-4 w-4 mr-2" />
-              Create your first entry
+              <span className="font-semibold">Create your first entry</span>
             </Button>
           </CardContent>
         </Card>
       ) : (
-        /* Entries List - Mobile First */
+        /* Entries List - Editorial Layout */
         <>
-          <div className="grid grid-cols-1 gap-4">
-            {entries.map((entry) => (
+          <div className="grid grid-cols-1 gap-6">
+            {entries.map((entry, index) => (
               <Card
                 key={entry.id}
-                className="group hover:shadow-xl hover:border-green-400 transition-all duration-200 cursor-pointer border-l-4 border-l-green-500"
+                className={`group card-float bg-card border-border/50 overflow-hidden stagger-fade-in stagger-${Math.min(index + 2, 8)}`}
               >
-                <CardHeader className="pb-3 bg-gradient-to-r from-green-50/50 to-transparent dark:from-green-950/20">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg truncate flex items-center gap-2">
-                        <div className="p-1.5 rounded-md bg-green-100 dark:bg-green-900/30">
-                          <FileText className="h-4 w-4 flex-shrink-0 text-green-600 dark:text-green-400" />
+                {/* Accent border */}
+                <div className="h-1 w-full bg-gradient-to-r from-accent via-primary to-accent/50" />
+
+                <CardHeader className="pb-4 bg-gradient-to-br from-muted/20 to-transparent">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0 space-y-3">
+                      <CardTitle className="font-serif text-xl sm:text-2xl truncate flex items-center gap-3 group-hover:text-accent transition-colors duration-200">
+                        <div className="p-2 rounded-xl bg-gradient-to-br from-accent/10 to-primary/10 group-hover:from-accent/20 group-hover:to-primary/20 transition-all duration-300">
+                          <FileText className="h-5 w-5 flex-shrink-0 text-accent" />
                         </div>
-                        {entry.data.title || entry.slug}
+                        <span className="tracking-tight">{entry.data.title || entry.slug}</span>
                       </CardTitle>
-                      <CardDescription className="mt-1.5 flex flex-wrap gap-2 items-center">
-                        <Badge variant="secondary" className="font-mono text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                      <CardDescription className="flex flex-wrap gap-3 items-center">
+                        <Badge variant="secondary" className="font-mono text-xs bg-accent/10 text-accent border border-accent/20 px-3 py-1">
                           /{entry.slug}
                         </Badge>
                         {entry.publishedAt && (
-                          <span className="text-xs">
-                            {formatDate(entry.publishedAt)}
+                          <span className="text-xs font-medium text-muted-foreground tracking-wide">
+                            Published {formatDate(entry.publishedAt)}
                           </span>
                         )}
                       </CardDescription>
@@ -178,67 +189,71 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit }: Pr
                   </div>
                 </CardHeader>
 
-                {/* Entry Preview - Show first few fields */}
-                <CardContent className="pb-3">
-                  <div className="space-y-2 bg-muted/30 rounded-md p-3">
+                {/* Entry Preview */}
+                <CardContent className="pb-4">
+                  <div className="space-y-3 bg-gradient-to-br from-muted/20 to-muted/5 rounded-xl p-4 border border-border/30">
                     {Object.entries(entry.data)
                       .slice(0, 2)
                       .map(([key, value]) => (
-                        <div key={key} className="text-sm">
-                          <span className="text-muted-foreground capitalize font-medium">
-                            {key}:
-                          </span>{' '}
-                          <span className="line-clamp-1">
-                            {typeof value === 'string' && value.length > 100
-                              ? value.substring(0, 100) + '...'
-                              : String(value)}
+                        <div key={key} className="text-sm space-y-1">
+                          <span className="text-xs uppercase tracking-widest font-semibold text-muted-foreground/70">
+                            {key}
                           </span>
+                          <p className="line-clamp-2 text-foreground/90 leading-relaxed">
+                            {typeof value === 'string' && value.length > 150
+                              ? value.substring(0, 150) + '...'
+                              : String(value)}
+                          </p>
                         </div>
                       ))}
                   </div>
                 </CardContent>
 
-                <CardFooter className="flex flex-wrap gap-2 pt-3 border-t bg-muted/30">
+                <CardFooter className="flex flex-wrap gap-3 pt-4 border-t border-border/30 bg-gradient-to-br from-muted/10 to-transparent">
                   <Button
                     variant="default"
                     size="sm"
-                    className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700"
+                    className="flex-1 sm:flex-none bg-accent hover:bg-accent/90 shadow-md hover:shadow-lg transition-all duration-200"
                     onClick={() => onEdit(entry)}
                   >
-                    <Edit className="h-3.5 w-3.5 mr-1.5" />
-                    Edit
+                    <Edit className="h-3.5 w-3.5 mr-2" />
+                    <span className="font-semibold">Edit</span>
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1 sm:flex-none border-green-200 hover:bg-green-50 dark:border-green-800 dark:hover:bg-green-950/30"
+                    className="flex-1 sm:flex-none border-primary/50 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-200"
                     asChild
                   >
                     <a href={`/${entry.slug}`} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                      View
+                      <ExternalLink className="h-3.5 w-3.5 mr-2" />
+                      <span className="font-semibold">View</span>
                     </a>
                   </Button>
                   <Button
                     variant="destructive"
                     size="sm"
-                    className="bg-red-600 hover:bg-red-700"
+                    className="shadow-md hover:shadow-lg transition-all duration-200"
                     onClick={() => handleDeleteClick(entry)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    <span className="sr-only sm:not-sr-only sm:ml-1.5">Delete</span>
+                    <span className="sr-only sm:not-sr-only sm:ml-2 font-semibold">Delete</span>
                   </Button>
                 </CardFooter>
               </Card>
             ))}
           </div>
 
-          {/* Stats */}
-          <div className="rounded-lg border bg-card text-card-foreground p-4">
-            <div className="flex items-center gap-2 text-sm">
-              <div className="h-2 w-2 rounded-full bg-primary" />
-              <span className="text-muted-foreground">Total Entries:</span>
-              <span className="font-semibold">{entries.length}</span>
+          {/* Editorial Stats */}
+          <div className={`rounded-xl border border-border/50 bg-gradient-to-br from-card to-muted/20 p-6 sm:p-8 card-float stagger-fade-in stagger-${Math.min(entries.length + 2, 8)}`}>
+            <div className="flex items-center gap-3">
+              <div className="h-3 w-3 rounded-full bg-gradient-to-r from-accent to-accent/50" />
+              <span className="text-sm font-medium text-muted-foreground tracking-wide uppercase">
+                Total Entries
+              </span>
+              <p className="font-numbers text-3xl sm:text-4xl text-foreground ml-auto">
+                {entries.length}
+              </p>
             </div>
           </div>
         </>
@@ -246,19 +261,20 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit }: Pr
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete Entry</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete "{entryToDelete?.data.title || entryToDelete?.slug}"?
+            <DialogTitle className="font-serif text-2xl">Delete Entry</DialogTitle>
+            <DialogDescription className="text-base leading-relaxed pt-2">
+              Are you sure you want to delete "<span className="font-semibold text-foreground">{entryToDelete?.data.title || entryToDelete?.slug}</span>"?
               This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className="gap-3 sm:gap-2">
             <Button
               variant="outline"
               onClick={() => setDeleteDialogOpen(false)}
               disabled={deleting}
+              className="hover-lift"
             >
               Cancel
             </Button>
@@ -266,9 +282,10 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit }: Pr
               variant="destructive"
               onClick={handleDeleteConfirm}
               disabled={deleting}
+              className="shadow-md hover:shadow-lg transition-all duration-200"
             >
               {deleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Delete
+              <span className="font-semibold">Delete</span>
             </Button>
           </DialogFooter>
         </DialogContent>

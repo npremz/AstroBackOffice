@@ -143,48 +143,49 @@ export default function CollectionEditor({ collection, onBack, onSaveSuccess }: 
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header - Mobile First */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onBack}
-            className="hidden md:flex"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h2>
-              {collection ? 'Edit Collection' : 'New Collection'}
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Define the structure for your content
-            </p>
-          </div>
+    <div className="space-y-8">
+      {/* Editorial Header */}
+      <div className="flex items-start gap-4 stagger-fade-in stagger-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onBack}
+          className="hidden md:flex hover-lift mt-1"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+        <div className="space-y-2">
+          <h2 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
+            {collection ? 'Edit Collection' : 'New Collection'}
+          </h2>
+          <p className="text-sm sm:text-base text-muted-foreground font-medium tracking-wide max-w-2xl">
+            Define the structure and schema for your content
+          </p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Collection Slug Card */}
-        <Card className="border-l-4 border-l-purple-500">
-          <CardHeader className="bg-gradient-to-r from-purple-50/50 to-transparent dark:from-purple-950/20">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-md bg-purple-100 dark:bg-purple-900/30">
-                <Layers className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Collection Details Card */}
+        <Card className="card-float bg-card border-border/50 overflow-hidden stagger-fade-in stagger-2">
+          <div className="h-1 w-full bg-gradient-to-r from-primary via-accent to-primary/50" />
+
+          <CardHeader className="bg-gradient-to-br from-muted/20 to-transparent">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10">
+                <Layers className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <CardTitle>Collection Details</CardTitle>
-                <CardDescription>
+                <CardTitle className="font-serif text-xl sm:text-2xl">Collection Details</CardTitle>
+                <CardDescription className="mt-1">
                   Set the unique identifier for this collection
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="slug">
+
+          <CardContent className="space-y-5 pt-6">
+            <div className="space-y-3">
+              <Label htmlFor="slug" className="text-sm font-semibold tracking-wide">
                 Collection Slug <span className="text-destructive">*</span>
               </Label>
               <Input
@@ -194,8 +195,9 @@ export default function CollectionEditor({ collection, onBack, onSaveSuccess }: 
                 onChange={(e) => setSlug(e.target.value)}
                 placeholder="e.g., products, blog-posts"
                 required
+                className="h-11 text-base"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground font-medium tracking-wide">
                 Lowercase letters, numbers, and hyphens only
               </p>
             </div>
@@ -203,16 +205,18 @@ export default function CollectionEditor({ collection, onBack, onSaveSuccess }: 
         </Card>
 
         {/* Schema Builder Card */}
-        <Card className="border-l-4 border-l-indigo-500">
-          <CardHeader className="bg-gradient-to-r from-indigo-50/50 to-transparent dark:from-indigo-950/20">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-md bg-indigo-100 dark:bg-indigo-900/30">
-                  <Plus className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+        <Card className="card-float bg-card border-border/50 overflow-hidden stagger-fade-in stagger-3">
+          <div className="h-1 w-full bg-gradient-to-r from-accent via-primary to-accent/50" />
+
+          <CardHeader className="bg-gradient-to-br from-muted/20 to-transparent">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-gradient-to-br from-accent/10 to-primary/10">
+                  <Plus className="h-5 w-5 text-accent" />
                 </div>
                 <div>
-                  <CardTitle>Schema Fields</CardTitle>
-                  <CardDescription className="mt-1.5">
+                  <CardTitle className="font-serif text-xl sm:text-2xl">Schema Fields</CardTitle>
+                  <CardDescription className="mt-2">
                     Define the fields for entries in this collection
                   </CardDescription>
                 </div>
@@ -220,39 +224,44 @@ export default function CollectionEditor({ collection, onBack, onSaveSuccess }: 
               <Button
                 type="button"
                 onClick={handleAddField}
-                size="sm"
-                className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700"
+                size="lg"
+                className="w-full sm:w-auto bg-accent hover:bg-accent/90 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add Field
+                <span className="font-semibold">Add Field</span>
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+
+          <CardContent className="space-y-6 pt-6">
             {fields.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 px-4 border-2 border-dashed rounded-lg">
-                <p className="text-sm text-muted-foreground mb-4">
+              <div className="flex flex-col items-center justify-center py-16 px-4 border-2 border-dashed border-border/50 rounded-xl bg-gradient-to-br from-muted/20 to-background">
+                <p className="text-sm sm:text-base text-muted-foreground mb-6 text-center leading-relaxed">
                   No fields yet. Add your first field to get started.
                 </p>
                 <Button
                   type="button"
                   onClick={handleAddField}
                   variant="outline"
-                  size="sm"
+                  size="lg"
+                  className="hover-lift"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add First Field
+                  <span className="font-semibold">Add First Field</span>
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {fields.map((field, index) => (
                   <div
                     key={index}
-                    className="rounded-lg border border-indigo-200 bg-indigo-50/30 dark:border-indigo-800 dark:bg-indigo-950/20 p-4 space-y-4"
+                    className={`rounded-xl border border-border/50 bg-gradient-to-br from-muted/10 to-background p-5 sm:p-6 space-y-5 stagger-fade-in stagger-${Math.min(index + 4, 8)}`}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <Badge variant="outline" className="bg-indigo-100 text-indigo-700 border-indigo-300 dark:bg-indigo-900/50 dark:text-indigo-300">
+                    <div className="flex items-center justify-between gap-3">
+                      <Badge
+                        variant="outline"
+                        className="font-medium bg-accent/10 text-accent border-accent/30 px-3 py-1.5"
+                      >
                         Field {index + 1}
                       </Badge>
                       <Button
@@ -260,16 +269,17 @@ export default function CollectionEditor({ collection, onBack, onSaveSuccess }: 
                         variant="ghost"
                         size="sm"
                         onClick={() => handleRemoveField(index)}
+                        className="hover-lift hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Remove
+                        <span className="font-semibold">Remove</span>
                       </Button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       {/* Field Label */}
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor={`field-label-${index}`}>
+                      <div className="space-y-3 sm:col-span-2">
+                        <Label htmlFor={`field-label-${index}`} className="text-sm font-semibold tracking-wide">
                           Field Label <span className="text-destructive">*</span>
                         </Label>
                         <Input
@@ -279,17 +289,20 @@ export default function CollectionEditor({ collection, onBack, onSaveSuccess }: 
                           onChange={(e) => handleFieldChange(index, { label: e.target.value })}
                           placeholder="e.g., Product Name"
                           required
+                          className="h-11 text-base"
                         />
                       </div>
 
                       {/* Field Type */}
-                      <div className="space-y-2">
-                        <Label htmlFor={`field-type-${index}`}>Field Type</Label>
+                      <div className="space-y-3">
+                        <Label htmlFor={`field-type-${index}`} className="text-sm font-semibold tracking-wide">
+                          Field Type
+                        </Label>
                         <Select
                           value={field.type}
                           onValueChange={(value) => handleFieldChange(index, { type: value })}
                         >
-                          <SelectTrigger id={`field-type-${index}`}>
+                          <SelectTrigger id={`field-type-${index}`} className="h-11">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -303,21 +316,21 @@ export default function CollectionEditor({ collection, onBack, onSaveSuccess }: 
                       </div>
 
                       {/* Field Key (auto-generated) */}
-                      <div className="space-y-2">
-                        <Label htmlFor={`field-key-${index}`}>
-                          Field Key <span className="text-xs text-muted-foreground">(auto)</span>
+                      <div className="space-y-3">
+                        <Label htmlFor={`field-key-${index}`} className="text-sm font-semibold tracking-wide">
+                          Field Key <span className="text-xs text-muted-foreground font-normal">(auto)</span>
                         </Label>
                         <Input
                           id={`field-key-${index}`}
                           type="text"
                           value={field.key}
                           readOnly
-                          className="bg-muted"
+                          className="bg-muted/50 h-11 font-mono text-sm"
                         />
                       </div>
 
                       {/* Required Checkbox */}
-                      <div className="flex items-center space-x-2 pt-6">
+                      <div className="flex items-center space-x-3 pt-6">
                         <Checkbox
                           id={`field-required-${index}`}
                           checked={field.required}
@@ -327,7 +340,7 @@ export default function CollectionEditor({ collection, onBack, onSaveSuccess }: 
                         />
                         <Label
                           htmlFor={`field-required-${index}`}
-                          className="text-sm font-normal cursor-pointer"
+                          className="text-sm font-medium cursor-pointer"
                         >
                           Required field
                         </Label>
@@ -342,29 +355,33 @@ export default function CollectionEditor({ collection, onBack, onSaveSuccess }: 
 
         {/* Error Alert */}
         {error && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="stagger-fade-in">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription className="font-medium">{error}</AlertDescription>
           </Alert>
         )}
 
-        {/* Actions - Mobile First */}
-        <div className="flex flex-col-reverse sm:flex-row gap-3">
+        {/* Actions */}
+        <div className="flex flex-col-reverse sm:flex-row gap-4 stagger-fade-in stagger-4">
           <Button
             type="button"
             variant="outline"
             onClick={onBack}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto hover-lift"
+            size="lg"
           >
-            Cancel
+            <span className="font-semibold">Cancel</span>
           </Button>
           <Button
             type="submit"
             disabled={saving}
-            className="w-full sm:w-auto sm:ml-auto bg-purple-600 hover:bg-purple-700"
+            className="w-full sm:w-auto sm:ml-auto bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
+            size="lg"
           >
             <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Saving...' : collection ? 'Update Collection' : 'Create Collection'}
+            <span className="font-semibold">
+              {saving ? 'Saving...' : collection ? 'Update Collection' : 'Create Collection'}
+            </span>
           </Button>
         </div>
       </form>

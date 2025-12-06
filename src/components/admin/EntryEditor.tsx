@@ -153,6 +153,7 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
             onChange={(e) => handleFieldChange(field.key, e.target.value)}
             placeholder={`Enter ${field.label.toLowerCase()}`}
             required={field.required}
+            className="h-11 text-base"
           />
         );
 
@@ -163,8 +164,9 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
             value={value}
             onChange={(e) => handleFieldChange(field.key, e.target.value)}
             placeholder={`Enter ${field.label.toLowerCase()}`}
-            rows={4}
+            rows={5}
             required={field.required}
+            className="text-base resize-none"
           />
         );
 
@@ -177,22 +179,23 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
             onChange={(e) => handleFieldChange(field.key, parseFloat(e.target.value) || 0)}
             placeholder="0"
             required={field.required}
+            className="h-11 text-base"
           />
         );
 
       case 'richtext':
         return (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Textarea
               id={`field-${field.key}`}
               value={value}
               onChange={(e) => handleFieldChange(field.key, e.target.value)}
               placeholder="<p>HTML content...</p>"
-              rows={10}
-              className="font-mono text-sm"
+              rows={12}
+              className="font-mono text-sm resize-y"
               required={field.required}
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground font-medium tracking-wide">
               HTML/Markdown content will be rendered on the page
             </p>
           </div>
@@ -209,7 +212,7 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
                 onChange={(e) => handleFieldChange(field.key, e.target.value)}
                 placeholder="/images/example.jpg or https://..."
                 required={field.required}
-                className="flex-1"
+                className="flex-1 h-11 text-base"
               />
               <Button
                 type="button"
@@ -217,23 +220,24 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
                 size="icon"
                 disabled
                 title="Image upload coming soon"
+                className="h-11 w-11"
               >
                 <ImageIcon className="h-4 w-4" />
               </Button>
             </div>
             {value && (
-              <div className="rounded-lg border p-2 bg-muted/50">
+              <div className="rounded-xl border border-border/50 p-3 bg-gradient-to-br from-muted/20 to-background">
                 <img
                   src={value}
                   alt="Preview"
-                  className="w-full h-48 object-cover rounded"
+                  className="w-full h-56 object-cover rounded-lg"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}
                 />
               </div>
             )}
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground font-medium tracking-wide">
               Enter an image URL or path
             </p>
           </div>
@@ -248,60 +252,62 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
             onChange={(e) => handleFieldChange(field.key, e.target.value)}
             placeholder={`Enter ${field.label.toLowerCase()}`}
             required={field.required}
+            className="h-11 text-base"
           />
         );
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header - Mobile First */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onBack}
-            className="hidden md:flex"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h2>
-              {entry ? 'Edit Entry' : 'New Entry'}
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1 capitalize">
-              {collection.slug}
-            </p>
-          </div>
+    <div className="space-y-8">
+      {/* Editorial Header */}
+      <div className="flex items-start gap-4 stagger-fade-in stagger-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onBack}
+          className="hidden md:flex hover-lift mt-1"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+        <div className="space-y-2">
+          <h2 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
+            {entry ? 'Edit Entry' : 'New Entry'}
+          </h2>
+          <p className="text-sm sm:text-base text-muted-foreground font-medium tracking-wide capitalize">
+            {collection.slug} Collection
+          </p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-8">
         {/* Meta Information Card */}
-        <Card className="border-l-4 border-l-amber-500">
-          <CardHeader className="bg-gradient-to-r from-amber-50/50 to-transparent dark:from-amber-950/20">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-md bg-amber-100 dark:bg-amber-900/30">
-                <Save className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+        <Card className="card-float bg-card border-border/50 overflow-hidden stagger-fade-in stagger-2">
+          <div className="h-1 w-full bg-gradient-to-r from-primary via-accent to-primary/50" />
+
+          <CardHeader className="bg-gradient-to-br from-muted/20 to-transparent">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10">
+                <Save className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <CardTitle>Meta Information</CardTitle>
-                <CardDescription>
+                <CardTitle className="font-serif text-xl sm:text-2xl">Meta Information</CardTitle>
+                <CardDescription className="mt-1">
                   Configure URL and template settings
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+          <CardContent className="space-y-5 pt-6">
+            <div className="grid grid-cols-1 gap-5">
               {/* Slug with collection prefix */}
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="slugSuffix">
+              <div className="space-y-3">
+                <Label htmlFor="slugSuffix" className="text-sm font-semibold tracking-wide">
                   Slug <span className="text-destructive">*</span>
                 </Label>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center bg-muted px-3 py-2 rounded-md border border-input text-sm text-muted-foreground font-mono">
+                <div className="flex items-stretch gap-2">
+                  <div className="flex items-center bg-muted/70 px-4 rounded-lg border border-border/50 text-sm text-muted-foreground font-mono font-medium">
                     {collection.slug}/
                   </div>
                   <Input
@@ -311,25 +317,28 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
                     onChange={(e) => setSlugSuffix(e.target.value)}
                     placeholder="my-entry"
                     required
-                    className="flex-1"
+                    className="flex-1 h-11 text-base"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  URL path: <code className="bg-muted px-1 rounded">/{fullSlug}</code>
+                <p className="text-xs text-muted-foreground font-medium tracking-wide">
+                  URL path: <code className="bg-muted/70 px-2 py-1 rounded font-mono">/{fullSlug}</code>
                 </p>
               </div>
 
               {/* Template */}
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="template">Template</Label>
+              <div className="space-y-3">
+                <Label htmlFor="template" className="text-sm font-semibold tracking-wide">
+                  Template
+                </Label>
                 <Input
                   id="template"
                   type="text"
                   value={template}
                   onChange={(e) => setTemplate(e.target.value)}
                   placeholder="LayoutName"
+                  className="h-11 text-base"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground font-medium tracking-wide">
                   Astro layout component (e.g., ServiceLayout, BlogLayout)
                 </p>
               </div>
@@ -338,35 +347,43 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
         </Card>
 
         {/* Content Fields Card */}
-        <Card className="border-l-4 border-l-emerald-500">
-          <CardHeader className="bg-gradient-to-r from-emerald-50/50 to-transparent dark:from-emerald-950/20">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-md bg-emerald-100 dark:bg-emerald-900/30">
-                  <FileText className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+        <Card className="card-float bg-card border-border/50 overflow-hidden stagger-fade-in stagger-3">
+          <div className="h-1 w-full bg-gradient-to-r from-accent via-primary to-accent/50" />
+
+          <CardHeader className="bg-gradient-to-br from-muted/20 to-transparent">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-gradient-to-br from-accent/10 to-primary/10">
+                  <FileText className="h-5 w-5 text-accent" />
                 </div>
                 <div>
-                  <CardTitle>Content</CardTitle>
-                  <CardDescription className="mt-1.5">
+                  <CardTitle className="font-serif text-xl sm:text-2xl">Content</CardTitle>
+                  <CardDescription className="mt-2">
                     Fill in the fields for this entry
                   </CardDescription>
                 </div>
               </div>
-              <Badge variant="outline" className="bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900/50 dark:text-emerald-300">
+              <Badge variant="outline" className="font-medium bg-accent/10 text-accent border-accent/30 px-3 py-1.5">
                 {collection.schema.length} {collection.schema.length === 1 ? 'field' : 'fields'}
               </Badge>
             </div>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {collection.schema.map((field) => (
-              <div key={field.key} className="space-y-2 p-4 rounded-lg bg-emerald-50/30 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-900/30">
-                <Label htmlFor={`field-${field.key}`} className="flex items-center gap-2">
-                  <span>{field.label}</span>
-                  {field.required && <span className="text-destructive">*</span>}
-                  <Badge variant="secondary" className="ml-auto text-xs font-normal bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
+
+          <CardContent className="space-y-6 pt-6">
+            {collection.schema.map((field, index) => (
+              <div
+                key={field.key}
+                className={`space-y-3 p-5 sm:p-6 rounded-xl bg-gradient-to-br from-muted/10 to-background border border-border/50 stagger-fade-in stagger-${Math.min(index + 4, 8)}`}
+              >
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <Label htmlFor={`field-${field.key}`} className="text-sm font-semibold tracking-wide">
+                    {field.label}
+                    {field.required && <span className="text-destructive ml-1">*</span>}
+                  </Label>
+                  <Badge variant="secondary" className="text-xs font-medium bg-accent/10 text-accent border border-accent/20">
                     {field.type}
                   </Badge>
-                </Label>
+                </div>
                 {renderField(field)}
               </div>
             ))}
@@ -375,29 +392,33 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
 
         {/* Error Alert */}
         {error && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="stagger-fade-in">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription className="font-medium">{error}</AlertDescription>
           </Alert>
         )}
 
-        {/* Actions - Mobile First */}
-        <div className="flex flex-col-reverse sm:flex-row gap-3 sticky bottom-4 bg-background p-4 -mx-4 border-t sm:static sm:bg-transparent sm:p-0 sm:border-0">
+        {/* Actions */}
+        <div className="flex flex-col-reverse sm:flex-row gap-4 sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 -mx-4 border-t border-border/50 sm:static sm:bg-transparent sm:p-0 sm:border-0 stagger-fade-in stagger-4">
           <Button
             type="button"
             variant="outline"
             onClick={onBack}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto hover-lift"
+            size="lg"
           >
-            Cancel
+            <span className="font-semibold">Cancel</span>
           </Button>
           <Button
             type="submit"
             disabled={saving}
-            className="w-full sm:w-auto sm:ml-auto bg-emerald-600 hover:bg-emerald-700"
+            className="w-full sm:w-auto sm:ml-auto bg-accent hover:bg-accent/90 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
+            size="lg"
           >
             <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Saving...' : entry ? 'Update Entry' : 'Create Entry'}
+            <span className="font-semibold">
+              {saving ? 'Saving...' : entry ? 'Update Entry' : 'Create Entry'}
+            </span>
           </Button>
         </div>
       </form>
