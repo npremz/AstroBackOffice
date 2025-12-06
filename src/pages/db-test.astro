@@ -1,4 +1,5 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
 import { db } from '../db';
 import { collections, entries } from '../db/schema';
 
@@ -6,15 +7,8 @@ const allCollections = await db.select().from(collections);
 const allEntries = await db.select().from(entries);
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>CMS - Database Test</title>
-	</head>
-	<body class="p-8 max-w-4xl mx-auto">
+<BaseLayout title="CMS - Database Test">
+	<div class="p-8 max-w-4xl mx-auto">
 		<h1 class="text-3xl font-bold mb-8">Custom CMS - Database Connection Test</h1>
 
 		<section class="mb-8">
@@ -45,5 +39,5 @@ const allEntries = await db.select().from(entries);
 				))}
 			</div>
 		</section>
-	</body>
-</html>
+	</div>
+</BaseLayout>
