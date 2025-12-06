@@ -1,0 +1,49 @@
+---
+import { db } from '../db';
+import { collections, entries } from '../db/schema';
+
+const allCollections = await db.select().from(collections);
+const allEntries = await db.select().from(entries);
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>CMS - Database Test</title>
+	</head>
+	<body class="p-8 max-w-4xl mx-auto">
+		<h1 class="text-3xl font-bold mb-8">Custom CMS - Database Connection Test</h1>
+
+		<section class="mb-8">
+			<h2 class="text-2xl font-semibold mb-4">Collections ({allCollections.length})</h2>
+			<div class="space-y-4">
+				{allCollections.map(collection => (
+					<div class="border border-gray-300 p-4 rounded">
+						<h3 class="font-bold text-lg">{collection.slug}</h3>
+						<pre class="bg-gray-100 p-2 mt-2 rounded text-sm overflow-auto">
+							{JSON.stringify(collection.schema, null, 2)}
+						</pre>
+					</div>
+				))}
+			</div>
+		</section>
+
+		<section>
+			<h2 class="text-2xl font-semibold mb-4">Entries ({allEntries.length})</h2>
+			<div class="space-y-4">
+				{allEntries.map(entry => (
+					<div class="border border-gray-300 p-4 rounded">
+						<h3 class="font-bold text-lg">{entry.slug}</h3>
+						<p class="text-sm text-gray-600">Template: {entry.template}</p>
+						<pre class="bg-gray-100 p-2 mt-2 rounded text-sm overflow-auto">
+							{JSON.stringify(entry.data, null, 2)}
+						</pre>
+					</div>
+				))}
+			</div>
+		</section>
+	</body>
+</html>
