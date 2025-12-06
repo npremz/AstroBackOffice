@@ -31,11 +31,11 @@ const title = entry.data.title || entry.slug;
 const description = entry.data.description || entry.data.content?.substring(0, 150) || '';
 ---
 
-<BaseLayout title={title} description={description}>
-  {LayoutComponent ? (
-    <LayoutComponent entry={entry} />
-  ) : (
-    <!-- Default rendering if no specific layout -->
+{LayoutComponent ? (
+  <LayoutComponent entry={entry} />
+) : (
+  <!-- Default rendering if no specific layout -->
+  <BaseLayout title={title} description={description}>
     <article class="max-w-4xl mx-auto px-4 py-16">
       <header class="mb-8">
         <h1 class="text-4xl font-bold text-gray-900 mb-4">{entry.data.title}</h1>
@@ -64,5 +64,5 @@ const description = entry.data.description || entry.data.content?.substring(0, 1
         )}
       </div>
     </article>
-  )}
-</BaseLayout>
+  </BaseLayout>
+)}

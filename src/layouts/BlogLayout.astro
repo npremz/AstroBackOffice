@@ -1,4 +1,6 @@
 ---
+import BaseLayout from './BaseLayout.astro';
+
 interface Props {
   entry: {
     id: number;
@@ -23,6 +25,10 @@ const publishedDate = new Date(entry.publishedAt).toLocaleDateString('en-US', {
 });
 ---
 
+<BaseLayout
+  title={entry.data.title}
+  description={`Blog post by ${entry.data.author}`}
+>
 <article class="max-w-4xl mx-auto px-4 py-16">
   <!-- Cover Image -->
   {entry.data.cover && (
@@ -99,3 +105,4 @@ const publishedDate = new Date(entry.publishedAt).toLocaleDateString('en-US', {
     </a>
   </footer>
 </article>
+</BaseLayout>

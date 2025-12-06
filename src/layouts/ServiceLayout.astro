@@ -1,4 +1,6 @@
 ---
+import BaseLayout from './BaseLayout.astro';
+
 interface Props {
   entry: {
     id: number;
@@ -15,6 +17,10 @@ interface Props {
 const { entry } = Astro.props;
 ---
 
+<BaseLayout
+  title={entry.data.title}
+  description={entry.data.description}
+>
 <article class="max-w-5xl mx-auto px-4 py-16">
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
     <!-- Image Section -->
@@ -110,3 +116,4 @@ const { entry } = Astro.props;
     </div>
   </div>
 </article>
+</BaseLayout>
