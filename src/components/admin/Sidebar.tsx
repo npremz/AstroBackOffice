@@ -1,4 +1,4 @@
-import { Layers, Package, Plus, ChevronRight, Menu, X } from 'lucide-react';
+import { Layers, Package, Plus, ChevronRight, Menu, X, Mail, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +37,7 @@ interface Props {
   onSelectSingle: (single: SingleType) => void;
   onCreateCollection: () => void;
   onCreateSingle: () => void;
+  onNavigateToHome: () => void;
   isOpen: boolean;
   onToggle: () => void;
 }
@@ -51,6 +52,7 @@ export default function Sidebar({
   onSelectSingle,
   onCreateCollection,
   onCreateSingle,
+  onNavigateToHome,
   isOpen,
   onToggle
 }: Props) {
@@ -78,20 +80,29 @@ export default function Sidebar({
       <aside
         className={cn(
           "fixed top-0 left-0 z-40 h-screen w-72 bg-card border-r border-border/50 transition-transform duration-300 ease-in-out overflow-y-auto",
-          "lg:translate-x-0 lg:static",
+          "lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-6 border-b border-border/50">
-            <h1 className="font-serif text-2xl font-semibold tracking-tight text-foreground">
-              Editorial CMS
-            </h1>
-            <p className="text-xs text-muted-foreground mt-1 font-medium tracking-wide">
+          <button
+            onClick={() => {
+              onNavigateToHome();
+              if (window.innerWidth < 1024) onToggle();
+            }}
+            className="p-6 border-b border-border/50 text-left hover:bg-accent/5 transition-colors duration-200 cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <Home className="h-5 w-5 text-primary" />
+              <h1 className="font-serif text-2xl font-semibold tracking-tight text-foreground">
+                Editorial CMS
+              </h1>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1 font-medium tracking-wide ml-7">
               Content Management
             </p>
-          </div>
+          </button>
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-6">
@@ -208,6 +219,17 @@ export default function Sidebar({
 
           {/* Footer */}
           <div className="p-4 border-t border-border/50 space-y-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-muted-foreground hover:text-primary"
+              asChild
+            >
+              <a href="mailto:support@hordeagence.com">
+                <Mail className="h-4 w-4 mr-2" />
+                <span className="font-medium">Support</span>
+              </a>
+            </Button>
             <Button
               variant="ghost"
               size="sm"
