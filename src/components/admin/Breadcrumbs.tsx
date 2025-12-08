@@ -20,7 +20,7 @@ export default function Breadcrumbs({ items, className }: Props) {
       aria-label="Fil d'Ariane"
       className={cn("flex items-center gap-2 text-sm overflow-x-auto", className)}
     >
-      <ol className="flex items-center gap-1.5">
+      <ol className="flex items-center gap-1.5" role="list">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           const isFirst = index === 0;
