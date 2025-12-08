@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 
-interface ContentModule {
+interface SingleType {
   id: number;
   slug: string;
   name: string;
@@ -23,19 +23,19 @@ interface ContentModule {
 }
 
 interface Props {
-  module: ContentModule;
+  singleType: SingleType;
   onBack: () => void;
   onSaveSuccess: () => void;
 }
 
-export default function ContentModuleContentEditor({ module, onBack, onSaveSuccess }: Props) {
+export default function SingleTypeContentEditor({ singleType, onBack, onSaveSuccess }: Props) {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    setFormData(module.data || {});
-  }, [module]);
+    setFormData(singleType.data || {});
+  }, [singleType]);
 
   const handleFieldChange = (key: string, value: any) => {
     setFormData(prev => ({ ...prev, [key]: value }));
@@ -47,7 +47,7 @@ export default function ContentModuleContentEditor({ module, onBack, onSaveSucce
     setSaving(true);
 
     // Validation
-    for (const field of module.schema) {
+    for (const field of singleType.schema) {
       if (field.required && !formData[field.key]) {
         setError(`${field.label} is required`);
         setSaving(false);
@@ -57,13 +57,13 @@ export default function ContentModuleContentEditor({ module, onBack, onSaveSucce
 
     try {
       const payload = {
-        slug: module.slug,
-        name: module.name,
-        schema: module.schema,
+        slug: singleType.slug,
+        name: singleType.name,
+        schema: singleType.schema,
         data: formData
       };
 
-      const response = await fetch(`/api/content-modules/${module.id}`, {
+      const response = await fetch(`/api/content-modules/${singleType.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -72,7 +72,7 @@ export default function ContentModuleContentEditor({ module, onBack, onSaveSucce
       if (!response.ok) throw new Error('Failed to save');
 
       toast.success('Content updated successfully!', {
-        description: `The content for "${module.name}" has been saved.`,
+        description: `The content for "${singleType.name}" has been saved.`,
       });
 
       onSaveSuccess();
@@ -86,7 +86,7 @@ export default function ContentModuleContentEditor({ module, onBack, onSaveSucce
     }
   };
 
-  const renderField = (field: ContentModule['schema'][0]) => {
+  const renderField = (field: SingleType['schema'][0]) => {
     const value = formData[field.key] || '';
 
     switch (field.type) {
@@ -221,10 +221,10 @@ export default function ContentModuleContentEditor({ module, onBack, onSaveSucce
             Edit Content
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground font-medium tracking-wide capitalize">
-            {module.name}
+            {singleType.name}
           </p>
           <Badge variant="secondary" className="font-mono text-xs bg-primary/10 text-primary border border-primary/20">
-            {module.slug}
+            {singleType.slug}
           </Badge>
         </div>
       </div>
@@ -243,18 +243,18 @@ export default function ContentModuleContentEditor({ module, onBack, onSaveSucce
                 <div>
                   <CardTitle className="font-serif text-xl sm:text-2xl">Content Fields</CardTitle>
                   <CardDescription className="mt-2">
-                    Fill in the content for this module
+                    Fill in the content for this single type
                   </CardDescription>
                 </div>
               </div>
               <Badge variant="outline" className="font-medium bg-accent/10 text-accent border-accent/30 px-3 py-1.5">
-                {module.schema.length} {module.schema.length === 1 ? 'field' : 'fields'}
+                {singleType.schema.length} {singleType.schema.length === 1 ? 'field' : 'fields'}
               </Badge>
             </div>
           </CardHeader>
 
           <CardContent className="space-y-6 pt-6">
-            {module.schema.map((field, index) => (
+            {singleType.schema.map((field, index) => (
               <div
                 key={field.key}
                 className={`space-y-3 p-5 sm:p-6 rounded-xl bg-gradient-to-br from-muted/10 to-background border border-border/50 stagger-fade-in stagger-${Math.min(index + 3, 8)}`}

@@ -352,122 +352,254 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background grain-overlay flex">
-      {/* Sidebar */}
-      <Sidebar
-        collections={collections}
-        singleTypes={singleTypes}
-        activeSection={activeSection}
-        selectedCollectionId={selectedCollection?.id}
-        selectedSingleId={selectedSingle?.id}
-        onSelectCollection={handleSelectCollection}
-        onSelectSingle={handleSelectSingle}
-        onCreateCollection={handleCreateCollection}
-        onCreateSingle={handleCreateSingle}
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-      />
-
-      {/* Main Content */}
-      <main className="flex-1 overflow-x-hidden">
-        {/* Top Bar with Breadcrumbs */}
-        <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/50">
-          <div className="px-4 py-4 sm:px-6 lg:px-8 lg:ml-0">
-            <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-background grain-overlay">
+      {/* Editorial Header */}
+      <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex h-20 items-center justify-between gap-4">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
               {(view !== 'collections' && view !== 'single') && (
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={handleBack}
-                  className="hover-lift flex-shrink-0"
+                  className="md:hidden hover-lift flex-shrink-0"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </Button>
               )}
-              <div className="flex items-center gap-2.5 text-sm overflow-x-auto">
-                {getBreadcrumbs().map((crumb, index) => {
-                  const isLast = index === getBreadcrumbs().length - 1;
-                  return (
-                    <div key={index} className="flex items-center gap-2.5 whitespace-nowrap">
-                      {index > 0 && (
-                        <span className="text-muted-foreground/40 font-light">/</span>
-                      )}
-                      <span className={isLast ? "text-foreground font-serif font-semibold tracking-tight" : "text-muted-foreground font-medium tracking-wide"}>
-                        {crumb}
-                      </span>
-                    </div>
-                  );
-                })}
+              <div className="min-w-0">
+                <h1 className="font-serif text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-foreground truncate">
+                  Editorial CMS
+                </h1>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 font-medium tracking-wide hidden sm:block">
+                  Content Management System
+                </p>
               </div>
             </div>
+
+            {/* Section Tabs */}
+            <div className="hidden lg:flex items-center gap-1 bg-muted/30 rounded-lg p-1">
+              <Button
+                variant={activeSection === 'collections' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => handleSectionChange('collections')}
+                className={activeSection === 'collections' ? 'bg-primary text-primary-foreground' : ''}
+              >
+                <Layers className="h-4 w-4 mr-2" />
+                <span className="font-medium">Collections</span>
+              </Button>
+              <Button
+                variant={activeSection === 'single' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => handleSectionChange('single')}
+                className={activeSection === 'single' ? 'bg-primary text-primary-foreground' : ''}
+              >
+                <Package className="h-4 w-4 mr-2" />
+                <span className="font-medium">Single Types</span>
+              </Button>
+            </div>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center gap-1 flex-shrink-0">
+              <Button variant="ghost" size="sm" className="hover-lift" asChild>
+                <a href="/" className="flex items-center gap-2">
+                  <Home className="h-4 w-4" />
+                  <span className="font-medium">Home</span>
+                </a>
+              </Button>
+              <Button variant="ghost" size="sm" className="hover-lift" asChild>
+                <a href="/db-test" className="flex items-center gap-2">
+                  <Database className="h-4 w-4" />
+                  <span className="font-medium">Database</span>
+                </a>
+              </Button>
+            </nav>
+
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden hover-lift"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className="px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-          {/* Collections Section */}
-          {view === 'collections' && (
-            <CollectionsList
-              collections={collections}
-              onSelectCollection={handleSelectCollection}
-              onCreateCollection={handleCreateCollection}
-              onEditCollection={handleEditCollection}
-            />
-          )}
+        {/* Mobile Menu */}
+        {sidebarOpen && (
+          <div className="border-t border-border/50 md:hidden bg-card/50 backdrop-blur-sm">
+            <nav className="w-full max-w-7xl mx-auto px-4 py-3 space-y-2">
+              {/* Mobile Section Switcher */}
+              <div className="flex items-center gap-1 bg-muted/30 rounded-lg p-1 mb-2">
+                <Button
+                  variant={activeSection === 'collections' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleSectionChange('collections')}
+                  className={`flex-1 ${activeSection === 'collections' ? 'bg-primary text-primary-foreground' : ''}`}
+                >
+                  <Layers className="h-4 w-4 mr-2" />
+                  <span className="font-medium">Collections</span>
+                </Button>
+                <Button
+                  variant={activeSection === 'single' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleSectionChange('single')}
+                  className={`flex-1 ${activeSection === 'single' ? 'bg-primary text-primary-foreground' : ''}`}
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  <span className="font-medium">Single Types</span>
+                </Button>
+              </div>
 
-          {view === 'collection-editor' && (
-            <CollectionEditor
-              collection={editingCollection}
-              onBack={handleBack}
-              onSaveSuccess={handleCollectionSaveSuccess}
-            />
-          )}
+              {/* Navigation Links */}
+              <Button variant="ghost" size="sm" className="w-full justify-start hover-lift" asChild>
+                <a href="/" className="flex items-center gap-2">
+                  <Home className="h-4 w-4" />
+                  <span className="font-medium">Home</span>
+                </a>
+              </Button>
+              <Button variant="ghost" size="sm" className="w-full justify-start hover-lift" asChild>
+                <a href="/db-test" className="flex items-center gap-2">
+                  <Database className="h-4 w-4" />
+                  <span className="font-medium">Database</span>
+                </a>
+              </Button>
+            </nav>
+          </div>
+        )}
+      </header>
 
-          {view === 'entries' && selectedCollection && (
-            <EntriesList
-              collection={selectedCollection}
-              onBack={handleBack}
-              onCreate={handleCreateEntry}
-              onEdit={handleEditEntry}
-              onEditSchema={handleEditCollection}
-            />
-          )}
+      {/* Editorial Breadcrumbs */}
+      <div className="border-b border-border/30 bg-gradient-to-r from-muted/30 to-muted/10">
+        <div className="w-full max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-2.5 text-sm overflow-x-auto">
+            {getBreadcrumbs().map((crumb, index) => {
+              const isLast = index === getBreadcrumbs().length - 1;
+              const isClickable = !isLast;
 
-          {view === 'entry-editor' && selectedCollection && (
-            <EntryEditor
-              collection={selectedCollection}
-              entry={selectedEntry}
-              onBack={handleBack}
-              onSaveSuccess={handleEntrySaveSuccess}
-            />
-          )}
+              // Determine the action for each breadcrumb
+              const handleClick = () => {
+                // Collections breadcrumbs
+                if (index === 0 && activeSection === 'collections' && view !== 'collections') {
+                  // Click on "Collections" - go back to collections view
+                  if (view === 'collection-editor') {
+                    handleBack();
+                  } else if (view === 'entries') {
+                    handleBack();
+                  } else if (view === 'entry-editor') {
+                    // Go back twice to reach collections
+                    setView('collections');
+                    setSelectedCollection(null);
+                    updateURL('collections');
+                  }
+                } else if (index === 1 && view === 'entry-editor' && selectedCollection) {
+                  // Click on collection name from entry-editor - go to entries view
+                  setView('entries');
+                  updateURL('entries', selectedCollection.id);
+                }
 
-          {/* Single Types Section */}
-          {view === 'single' && (
-            <SingleTypesList
-              singleTypes={singleTypes}
-              onSelectSingle={handleSelectSingle}
-              onCreateSingle={handleCreateSingle}
-              onEditSingleSchema={handleEditSingleSchema}
-            />
-          )}
+                // Single Types breadcrumbs
+                else if (index === 0 && activeSection === 'single' && view !== 'single') {
+                  // Click on "Single Types" - go back to single types view
+                  if (view === 'single-schema-editor' || view === 'single-content-editor') {
+                    setView('single');
+                    setSelectedSingle(null);
+                    setEditingSingleSchema(null);
+                    updateURL('single');
+                  }
+                }
+              };
 
-          {view === 'single-schema-editor' && (
-            <SingleTypeEditor
-              singleType={editingSingleSchema}
-              onBack={handleBack}
-              onSaveSuccess={handleSingleSchemaSaveSuccess}
-            />
-          )}
-
-          {view === 'single-content-editor' && selectedSingle && (
-            <SingleTypeContentEditor
-              singleType={selectedSingle}
-              onBack={handleBack}
-              onSaveSuccess={handleSingleContentSaveSuccess}
-            />
-          )}
+              return (
+                <div key={index} className="flex items-center gap-2.5 whitespace-nowrap">
+                  {index > 0 && (
+                    <span className="text-muted-foreground/40 font-light">/</span>
+                  )}
+                  {isClickable ? (
+                    <button
+                      onClick={handleClick}
+                      className="text-muted-foreground hover:text-primary transition-all duration-200 font-medium tracking-wide hover:underline underline-offset-4 decoration-primary/30"
+                    >
+                      {crumb}
+                    </button>
+                  ) : (
+                    <span className="text-foreground font-serif font-semibold tracking-tight">
+                      {crumb}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
+      </div>
+
+      {/* Main Content - Editorial Layout */}
+      <main className="w-full max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+        {/* Collections Section */}
+        {view === 'collections' && (
+          <CollectionsList
+            collections={collections}
+            onSelectCollection={handleSelectCollection}
+            onCreateCollection={handleCreateCollection}
+            onEditCollection={handleEditCollection}
+          />
+        )}
+
+        {view === 'collection-editor' && (
+          <CollectionEditor
+            collection={editingCollection}
+            onBack={handleBack}
+            onSaveSuccess={handleCollectionSaveSuccess}
+          />
+        )}
+
+        {view === 'entries' && selectedCollection && (
+          <EntriesList
+            collection={selectedCollection}
+            onBack={handleBack}
+            onCreate={handleCreateEntry}
+            onEdit={handleEditEntry}
+          />
+        )}
+
+        {view === 'entry-editor' && selectedCollection && (
+          <EntryEditor
+            collection={selectedCollection}
+            entry={selectedEntry}
+            onBack={handleBack}
+            onSaveSuccess={handleEntrySaveSuccess}
+          />
+        )}
+
+        {/* Single Types Section */}
+        {view === 'single' && (
+          <SingleTypesList
+            singleTypes={singleTypes}
+            onSelectSingle={handleSelectSingle}
+            onCreateSingle={handleCreateSingle}
+            onEditSingleSchema={handleEditSingleSchema}
+          />
+        )}
+
+        {view === 'single-schema-editor' && (
+          <SingleTypeEditor
+            singleType={editingSingleSchema}
+            onBack={handleBack}
+            onSaveSuccess={handleSingleSchemaSaveSuccess}
+          />
+        )}
+
+        {view === 'single-content-editor' && selectedSingle && (
+          <SingleTypeContentEditor
+            singleType={selectedSingle}
+            onBack={handleBack}
+            onSaveSuccess={handleSingleContentSaveSuccess}
+          />
+        )}
       </main>
 
       {/* Toast notifications */}

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-interface ContentModule {
+interface SingleType {
   id: number;
   slug: string;
   name: string;
@@ -18,17 +18,17 @@ interface ContentModule {
 }
 
 interface Props {
-  modules: ContentModule[];
-  onSelectModule: (module: ContentModule) => void;
-  onCreateModule: () => void;
-  onEditModuleSchema: (module: ContentModule) => void;
+  singleTypes: SingleType[];
+  onSelectSingle: (single: SingleType) => void;
+  onCreateSingle: () => void;
+  onEditSingleSchema: (single: SingleType) => void;
 }
 
-export default function ContentModulesList({
-  modules,
-  onSelectModule,
-  onCreateModule,
-  onEditModuleSchema
+export default function SingleTypesList({
+  singleTypes,
+  onSelectSingle,
+  onCreateSingle,
+  onEditSingleSchema
 }: Props) {
   return (
     <div className="space-y-8">
@@ -36,52 +36,52 @@ export default function ContentModulesList({
       <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between stagger-fade-in stagger-1">
         <div className="space-y-2">
           <h2 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
-            Content Modules
+            Single Types
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground font-medium tracking-wide max-w-2xl">
             Manage single-use content for fixed pages like About, Hero, and Contact sections
           </p>
         </div>
         <Button
-          onClick={onCreateModule}
+          onClick={onCreateSingle}
           className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
           size="lg"
         >
           <Plus className="h-4 w-4 mr-2" />
-          <span className="font-semibold">New Module</span>
+          <span className="font-semibold">New Single Type</span>
         </Button>
       </div>
 
       {/* Empty State */}
-      {modules.length === 0 ? (
+      {singleTypes.length === 0 ? (
         <Card className="border-dashed border-2 border-border/50 bg-gradient-to-br from-muted/30 to-background stagger-fade-in stagger-2">
           <CardContent className="flex flex-col items-center justify-center py-16 px-4">
             <div className="rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 p-6 mb-6">
               <Package className="h-12 w-12 text-primary" />
             </div>
-            <h3 className="font-serif text-2xl font-semibold mb-2">No modules yet</h3>
+            <h3 className="font-serif text-2xl font-semibold mb-2">No single types yet</h3>
             <p className="text-sm sm:text-base text-muted-foreground text-center mb-8 max-w-md leading-relaxed">
-              Create your first content module to manage content for fixed pages like About Us, Hero sections, or Contact information
+              Create your first single type to manage content for fixed pages like About Us, Hero sections, or Contact information
             </p>
             <Button
-              onClick={onCreateModule}
+              onClick={onCreateSingle}
               size="lg"
               className="bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
             >
               <Plus className="h-4 w-4 mr-2" />
-              <span className="font-semibold">Create your first module</span>
+              <span className="font-semibold">Create your first single type</span>
             </Button>
           </CardContent>
         </Card>
       ) : (
         <>
-          {/* Modules Grid */}
+          {/* Single Types Grid */}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {modules.map((module, index) => (
+            {singleTypes.map((single, index) => (
               <Card
-                key={module.id}
+                key={single.id}
                 className={`group card-float bg-card border-border/50 overflow-hidden cursor-pointer stagger-fade-in stagger-${Math.min(index + 2, 8)}`}
-                onClick={() => onSelectModule(module)}
+                onClick={() => onSelectSingle(single)}
               >
                 {/* Accent border */}
                 <div className="h-1 w-full bg-gradient-to-r from-primary via-accent to-primary/50" />
@@ -93,14 +93,14 @@ export default function ContentModulesList({
                         <div className="p-2 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 group-hover:from-primary/20 group-hover:to-accent/20 transition-all duration-300">
                           <Package className="h-5 w-5 flex-shrink-0 text-primary" />
                         </div>
-                        <span className="tracking-tight">{module.name}</span>
+                        <span className="tracking-tight">{single.name}</span>
                       </CardTitle>
                       <CardDescription className="flex items-center gap-2">
                         <Badge
                           variant="secondary"
                           className="font-mono text-xs bg-primary/10 text-primary border border-primary/20 px-3 py-1"
                         >
-                          {module.slug}
+                          {single.slug}
                         </Badge>
                       </CardDescription>
                     </div>
@@ -112,7 +112,7 @@ export default function ContentModulesList({
                     Schema Fields
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {module.schema.slice(0, 3).map((field, idx) => (
+                    {single.schema.slice(0, 3).map((field, idx) => (
                       <Badge
                         key={idx}
                         variant="outline"
@@ -121,17 +121,17 @@ export default function ContentModulesList({
                         {field.label}
                       </Badge>
                     ))}
-                    {module.schema.length > 3 && (
+                    {single.schema.length > 3 && (
                       <Badge
                         variant="outline"
                         className="text-xs font-medium border-border/50 bg-muted/50"
                       >
-                        +{module.schema.length - 3} more
+                        +{single.schema.length - 3} more
                       </Badge>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground font-medium">
-                    {module.schema.length} {module.schema.length === 1 ? 'field' : 'fields'}
+                    {single.schema.length} {single.schema.length === 1 ? 'field' : 'fields'}
                   </p>
                 </CardContent>
 
@@ -140,7 +140,7 @@ export default function ContentModulesList({
                     variant="default"
                     size="sm"
                     className="flex-1 bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all duration-200"
-                    onClick={() => onSelectModule(module)}
+                    onClick={() => onSelectSingle(single)}
                   >
                     <Edit className="h-3.5 w-3.5 mr-2" />
                     <span className="font-semibold">Edit Content</span>
@@ -151,7 +151,7 @@ export default function ContentModulesList({
                     className="border-border/50 hover:bg-accent/10 hover:border-accent/50 transition-all duration-200"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onEditModuleSchema(module);
+                      onEditSingleSchema(single);
                     }}
                   >
                     <Settings className="h-3.5 w-3.5" />
@@ -163,14 +163,14 @@ export default function ContentModulesList({
           </div>
 
           {/* Stats Summary */}
-          <div className={`rounded-xl border border-border/50 bg-gradient-to-br from-card to-muted/20 p-6 sm:p-8 card-float stagger-fade-in stagger-${Math.min(modules.length + 2, 8)}`}>
+          <div className={`rounded-xl border border-border/50 bg-gradient-to-br from-card to-muted/20 p-6 sm:p-8 card-float stagger-fade-in stagger-${Math.min(singleTypes.length + 2, 8)}`}>
             <div className="flex items-center gap-3">
               <div className="h-3 w-3 rounded-full bg-gradient-to-r from-primary to-primary/50" />
               <span className="text-sm font-medium text-muted-foreground tracking-wide uppercase">
-                Total Modules
+                Total Single Types
               </span>
               <p className="font-numbers text-3xl sm:text-4xl text-foreground ml-auto">
-                {modules.length}
+                {singleTypes.length}
               </p>
             </div>
           </div>

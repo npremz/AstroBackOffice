@@ -17,7 +17,7 @@ interface FieldSchema {
   required: boolean;
 }
 
-interface ContentModule {
+interface SingleType {
   id?: number;
   slug: string;
   name: string;
@@ -26,7 +26,7 @@ interface ContentModule {
 }
 
 interface Props {
-  module: ContentModule | null;
+  singleType: SingleType | null;
   onBack: () => void;
   onSaveSuccess: () => void;
 }
@@ -39,7 +39,7 @@ const FIELD_TYPES = [
   { value: 'image', label: 'Image URL' },
 ];
 
-export default function ContentModuleEditor({ module, onBack, onSaveSuccess }: Props) {
+export default function SingleTypeEditor({ singleType, onBack, onSaveSuccess }: Props) {
   const [slug, setSlug] = useState('');
   const [name, setName] = useState('');
   const [fields, setFields] = useState<FieldSchema[]>([]);
@@ -47,16 +47,16 @@ export default function ContentModuleEditor({ module, onBack, onSaveSuccess }: P
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (module) {
-      setSlug(module.slug);
-      setName(module.name);
-      setFields(module.schema);
+    if (singleType) {
+      setSlug(singleType.slug);
+      setName(singleType.name);
+      setFields(singleType.schema);
     } else {
       setSlug('');
       setName('');
       setFields([]);
     }
-  }, [module]);
+  }, [singleType]);
 
   const handleAddField = () => {
     setFields([...fields, {
@@ -93,13 +93,13 @@ export default function ContentModuleEditor({ module, onBack, onSaveSuccess }: P
 
     // Validation
     if (!slug) {
-      setError('Module slug is required');
+      setError('Single type slug is required');
       setSaving(false);
       return;
     }
 
     if (!name) {
-      setError('Module name is required');
+      setError('Single type name is required');
       setSaving(false);
       return;
     }
@@ -129,11 +129,11 @@ export default function ContentModuleEditor({ module, onBack, onSaveSuccess }: P
         slug,
         name,
         schema: fields,
-        data: module?.data || initialData
+        data: singleType?.data || initialData
       };
 
-      const response = module
-        ? await fetch(`/api/content-modules/${module.id}`, {
+      const response = singleType
+        ? await fetch(`/api/content-modules/${singleType.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -147,16 +147,16 @@ export default function ContentModuleEditor({ module, onBack, onSaveSuccess }: P
       if (!response.ok) throw new Error('Failed to save');
 
       toast.success(
-        module ? 'Module updated successfully!' : 'Module created successfully!',
+        singleType ? 'Single type updated successfully!' : 'Single type created successfully!',
         {
-          description: `The module "${name}" has been saved.`,
+          description: `The single type "${name}" has been saved.`,
         }
       );
 
       onSaveSuccess();
     } catch (err) {
-      setError('Failed to save module. Please try again.');
-      toast.error('Failed to save module', {
+      setError('Failed to save single type. Please try again.');
+      toast.error('Failed to save single type', {
         description: 'Please check your inputs and try again.',
       });
     } finally {
@@ -178,10 +178,10 @@ export default function ContentModuleEditor({ module, onBack, onSaveSuccess }: P
         </Button>
         <div className="space-y-2">
           <h2 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
-            {module ? 'Edit Module Schema' : 'New Content Module'}
+            {singleType ? 'Edit Single Type Schema' : 'New Single Type'}
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground font-medium tracking-wide max-w-2xl">
-            Define the structure and fields for this content module
+            Define the structure and fields for this single type
           </p>
         </div>
       </div>
@@ -197,9 +197,9 @@ export default function ContentModuleEditor({ module, onBack, onSaveSuccess }: P
                 <Package className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <CardTitle className="font-serif text-xl sm:text-2xl">Module Details</CardTitle>
+                <CardTitle className="font-serif text-xl sm:text-2xl">Single Type Details</CardTitle>
                 <CardDescription className="mt-1">
-                  Set the unique identifier and name for this module
+                  Set the unique identifier and name for this single type
                 </CardDescription>
               </div>
             </div>
@@ -208,7 +208,7 @@ export default function ContentModuleEditor({ module, onBack, onSaveSuccess }: P
           <CardContent className="space-y-5 pt-6">
             <div className="space-y-3">
               <Label htmlFor="name" className="text-sm font-semibold tracking-wide">
-                Module Name <span className="text-destructive">*</span>
+                Single Type Name <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="name"
@@ -216,8 +216,8 @@ export default function ContentModuleEditor({ module, onBack, onSaveSuccess }: P
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
-                  // Auto-generate slug from name (only for new modules)
-                  if (!module) {
+                  // Auto-generate slug from name (only for new single types)
+                  if (!singleType) {
                     const generatedSlug = e.target.value.toLowerCase()
                       .replace(/[^a-z0-9]+/g, '-')
                       .replace(/(^-|-$)/g, '');
@@ -235,17 +235,17 @@ export default function ContentModuleEditor({ module, onBack, onSaveSuccess }: P
 
             <div className="space-y-3">
               <Label htmlFor="slug" className="text-sm font-semibold tracking-wide">
-                Module Slug <span className="text-xs text-muted-foreground font-normal">(auto)</span>
+                Single Type Slug <span className="text-xs text-muted-foreground font-normal">(auto)</span>
               </Label>
               <Input
                 id="slug"
                 type="text"
                 value={slug}
-                readOnly={!module}
-                onChange={(e) => module && setSlug(e.target.value)}
+                readOnly={!singleType}
+                onChange={(e) => singleType && setSlug(e.target.value)}
                 placeholder="e.g., about-us, hero-home"
                 required
-                className={`h-11 text-base font-mono text-sm ${!module ? 'bg-muted/50' : ''}`}
+                className={`h-11 text-base font-mono text-sm ${!singleType ? 'bg-muted/50' : ''}`}
               />
               <p className="text-xs text-muted-foreground font-medium tracking-wide">
                 Used in code: getContentModule('{slug || 'about-us'}')
@@ -267,7 +267,7 @@ export default function ContentModuleEditor({ module, onBack, onSaveSuccess }: P
                 <div>
                   <CardTitle className="font-serif text-xl sm:text-2xl">Schema Fields</CardTitle>
                   <CardDescription className="mt-2">
-                    Define the content fields for this module
+                    Define the content fields for this single type
                   </CardDescription>
                 </div>
               </div>
@@ -426,7 +426,7 @@ export default function ContentModuleEditor({ module, onBack, onSaveSuccess }: P
           >
             <Save className="h-4 w-4 mr-2" />
             <span className="font-semibold">
-              {saving ? 'Saving...' : module ? 'Update Module' : 'Create Module'}
+              {saving ? 'Saving...' : singleType ? 'Update Single Type' : 'Create Single Type'}
             </span>
           </Button>
         </div>

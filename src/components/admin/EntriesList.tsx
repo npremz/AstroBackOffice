@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, FileText, Edit, Trash2, ChevronLeft, ExternalLink, Loader2 } from 'lucide-react';
+import { Plus, FileText, Edit, Trash2, ChevronLeft, ExternalLink, Loader2, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,9 +33,10 @@ interface Props {
   onBack: () => void;
   onCreate: () => void;
   onEdit: (entry: Entry) => void;
+  onEditSchema: (collection: Collection) => void;
 }
 
-export default function EntriesList({ collection, onBack, onCreate, onEdit }: Props) {
+export default function EntriesList({ collection, onBack, onCreate, onEdit, onEditSchema }: Props) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -113,14 +114,25 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit }: Pr
             </p>
           </div>
         </div>
-        <Button
-          onClick={onCreate}
-          className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
-          size="lg"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          <span className="font-semibold">New Entry</span>
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <Button
+            onClick={() => onEditSchema(collection)}
+            variant="outline"
+            className="w-full sm:w-auto border-border/50 hover:bg-accent/10 hover:border-accent/50 transition-all duration-200"
+            size="lg"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            <span className="font-semibold">Edit Schema</span>
+          </Button>
+          <Button
+            onClick={onCreate}
+            className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
+            size="lg"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            <span className="font-semibold">New Entry</span>
+          </Button>
+        </div>
       </div>
 
       {/* Loading State */}
