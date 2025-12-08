@@ -3,6 +3,8 @@ import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 import Sidebar from './Sidebar';
+import Breadcrumbs, { type BreadcrumbItem } from './Breadcrumbs';
+import Dashboard from './Dashboard';
 import CollectionsList from './CollectionsList';
 import CollectionEditor from './CollectionEditor';
 import EntriesList from './EntriesList';
@@ -45,7 +47,7 @@ interface SingleType {
   updatedAt: Date;
 }
 
-type ViewType = 'collections' | 'collection-editor' | 'entries' | 'entry-editor' | 'single' | 'single-schema-editor' | 'single-content-editor';
+type ViewType = 'dashboard' | 'collections' | 'collection-editor' | 'entries' | 'entry-editor' | 'single' | 'single-schema-editor' | 'single-content-editor';
 type Section = 'collections' | 'single';
 
 export default function AdminDashboard() {
@@ -61,7 +63,7 @@ export default function AdminDashboard() {
   const [editingSingleSchema, setEditingSingleSchema] = useState<SingleType | null>(null);
 
   // UI states
-  const [view, setView] = useState<ViewType>('collections');
+  const [view, setView] = useState<ViewType>('dashboard');
   const [activeSection, setActiveSection] = useState<Section>('collections');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -100,13 +102,16 @@ export default function AdminDashboard() {
 
     if (urlView) {
       setView(urlView);
-    } else {
+    } else if (section) {
       // Default views based on section
       if (section === 'single') {
         setView('single');
       } else {
         setView('collections');
       }
+    } else {
+      // No URL params - show dashboard
+      setView('dashboard');
     }
 
     // Load collection if needed
@@ -178,6 +183,12 @@ export default function AdminDashboard() {
 
   // Update URL without page reload
   const updateURL = (newView: ViewType, section?: Section, collectionId?: number, entryId?: number, singleId?: number) => {
+    // Dashboard has no URL params
+    if (newView === 'dashboard') {
+      window.history.pushState({}, '', '/admin');
+      return;
+    }
+
     const params = new URLSearchParams();
 
     // Set section
@@ -304,10 +315,16 @@ export default function AdminDashboard() {
       setView('collections');
       setSelectedCollection(null);
       updateURL('collections', 'collections');
+    } else if (view === 'collections') {
+      setView('dashboard');
+      updateURL('dashboard');
     } else if (view === 'collection-editor') {
       setView('collections');
       setEditingCollection(null);
       updateURL('collections', 'collections');
+    } else if (view === 'single') {
+      setView('dashboard');
+      updateURL('dashboard');
     } else if (view === 'single-content-editor' || view === 'single-schema-editor') {
       setView('single');
       setSelectedSingle(null);
@@ -328,24 +345,86 @@ export default function AdminDashboard() {
     }
   };
 
-  const getBreadcrumbs = () => {
-    const breadcrumbs = [activeSection === 'collections' ? 'Collections' : 'Single Types'];
+  // Dashboard navigation handlers
+  const handleNavigateToHome = () => {
+    setView('dashboard');
+    updateURL('dashboard');
+  };
 
-    // Collections breadcrumbs
-    if (view === 'collection-editor') {
-      breadcrumbs.push(editingCollection ? 'Edit Collection' : 'New Collection');
-    } else if (view === 'entries' && selectedCollection) {
-      breadcrumbs.push(selectedCollection.slug);
-    } else if (view === 'entry-editor' && selectedCollection) {
-      breadcrumbs.push(selectedCollection.slug);
-      breadcrumbs.push(selectedEntry ? 'Edit Entry' : 'New Entry');
+  const handleNavigateToCollections = () => {
+    setActiveSection('collections');
+    setView('collections');
+    updateURL('collections', 'collections');
+  };
+
+  const handleNavigateToSingleTypes = () => {
+    setActiveSection('single');
+    setView('single');
+    updateURL('single', 'single');
+  };
+
+  const navigateToEntriesList = () => {
+    if (!selectedCollection) return;
+    setView('entries');
+    updateURL('entries', 'collections', selectedCollection.id);
+  };
+
+  const getBreadcrumbs = (): BreadcrumbItem[] => {
+    const breadcrumbs: BreadcrumbItem[] = [
+      { label: 'Home', onClick: view !== 'dashboard' ? handleNavigateToHome : undefined }
+    ];
+
+    if (view === 'dashboard') {
+      return breadcrumbs;
     }
 
-    // Single Types breadcrumbs
-    if (view === 'single-schema-editor') {
-      breadcrumbs.push(editingSingleSchema ? 'Edit Schema' : 'New Single Type');
-    } else if (view === 'single-content-editor' && selectedSingle) {
-      breadcrumbs.push(selectedSingle.name);
+    if (activeSection === 'collections') {
+      breadcrumbs.push({
+        label: 'Collections',
+        onClick: view !== 'collections' ? handleNavigateToCollections : undefined
+      });
+      if (view === 'collection-editor') {
+        breadcrumbs.push({
+          label: editingCollection ? 'Edit Collection' : 'New Collection'
+        });
+      } else if (selectedCollection) {
+        breadcrumbs.push({
+          label: selectedCollection.slug,
+          onClick: view !== 'entries' ? navigateToEntriesList : undefined
+        });
+
+        if (view === 'entries') {
+          breadcrumbs.push({ label: 'Entries' });
+        } else if (view === 'entry-editor') {
+          breadcrumbs.push({
+            label: 'Entries',
+            onClick: navigateToEntriesList
+          });
+          breadcrumbs.push({
+            label: selectedEntry ? 'Edit Entry' : 'New Entry'
+          });
+        }
+      }
+    } else {
+      breadcrumbs.push({
+        label: 'Single Types',
+        onClick: view !== 'single' ? handleNavigateToSingleTypes : undefined
+      });
+
+      if (view === 'single-schema-editor') {
+        breadcrumbs.push({
+          label: editingSingleSchema ? 'Edit Schema' : 'New Single Type'
+        });
+      } else if (view === 'single-content-editor' && selectedSingle) {
+        breadcrumbs.push({
+          label: selectedSingle.name,
+          onClick: () => {
+            setView('single');
+            updateURL('single', 'single');
+          }
+        });
+        breadcrumbs.push({ label: 'Content' });
+      }
     }
 
     return breadcrumbs;
@@ -364,47 +443,34 @@ export default function AdminDashboard() {
         onSelectSingle={handleSelectSingle}
         onCreateCollection={handleCreateCollection}
         onCreateSingle={handleCreateSingle}
+        onNavigateToHome={handleNavigateToHome}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-x-hidden">
-        {/* Top Bar with Breadcrumbs */}
-        <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/50">
-          <div className="px-4 py-4 sm:px-6 lg:px-8 lg:ml-0">
+      <main className="flex-1 overflow-x-hidden lg:ml-72">
+        {/* Top Bar with Breadcrumbs - Fixed */}
+        <div className="fixed top-0 right-0 left-0 lg:left-72 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50 shadow-sm">
+          <div className="px-4 py-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-4">
-              {(view !== 'collections' && view !== 'single') && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleBack}
-                  className="hover-lift flex-shrink-0"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
-              )}
-              <div className="flex items-center gap-2.5 text-sm overflow-x-auto">
-                {getBreadcrumbs().map((crumb, index) => {
-                  const isLast = index === getBreadcrumbs().length - 1;
-                  return (
-                    <div key={index} className="flex items-center gap-2.5 whitespace-nowrap">
-                      {index > 0 && (
-                        <span className="text-muted-foreground/40 font-light">/</span>
-                      )}
-                      <span className={isLast ? "text-foreground font-serif font-semibold tracking-tight" : "text-muted-foreground font-medium tracking-wide"}>
-                        {crumb}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+              <Breadcrumbs items={getBreadcrumbs()} />
             </div>
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className="px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+        {/* Content Area with padding to account for fixed header */}
+        <div className="px-4 pb-8 sm:px-6 lg:px-8 lg:pb-12 pt-28 lg:pt-32">
+          {/* Dashboard */}
+          {view === 'dashboard' && (
+            <Dashboard
+              collections={collections}
+              singleTypes={singleTypes}
+              onNavigateToCollections={handleNavigateToCollections}
+              onNavigateToSingleTypes={handleNavigateToSingleTypes}
+            />
+          )}
+
           {/* Collections Section */}
           {view === 'collections' && (
             <CollectionsList
