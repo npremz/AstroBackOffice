@@ -164,14 +164,17 @@ export default function Dashboard({
                 </div>
               </div>
             )}
-            <Button
-              className="w-full bg-primary hover:bg-primary/90 group-hover:shadow-lg transition-all duration-300"
-              onClick={onNavigateToCollections}
-            >
-              <span className="font-semibold">Gérer les Collections</span>
-              <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
-            </Button>
-          </CardContent>
+             <Button
+               className="w-full bg-primary hover:bg-primary/90 group-hover:shadow-lg transition-all duration-300"
+               onClick={(event) => {
+                 event.stopPropagation();
+                 onNavigateToCollections();
+               }}
+             >
+               <span className="font-semibold">Gérer les Collections</span>
+               <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
+             </Button>
+           </CardContent>
         </Card>
 
         {/* Single Types Card */}
@@ -218,14 +221,17 @@ export default function Dashboard({
                 </div>
               </div>
             )}
-            <Button
-              className="w-full bg-accent hover:bg-accent/90 group-hover:shadow-lg transition-all duration-300"
-              onClick={onNavigateToSingleTypes}
-            >
-              <span className="font-semibold">Gérer les Single Types</span>
-              <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
-            </Button>
-          </CardContent>
+             <Button
+               className="w-full bg-accent hover:bg-accent/90 group-hover:shadow-lg transition-all duration-300"
+               onClick={(event) => {
+                 event.stopPropagation();
+                 onNavigateToSingleTypes();
+               }}
+             >
+               <span className="font-semibold">Gérer les Single Types</span>
+               <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
+             </Button>
+           </CardContent>
         </Card>
       </div>
 
