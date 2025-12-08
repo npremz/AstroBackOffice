@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import RichTextEditor from './RichTextEditor';
 
 interface Collection {
   id: number;
@@ -185,20 +186,11 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
 
       case 'richtext':
         return (
-          <div className="space-y-3">
-            <Textarea
-              id={`field-${field.key}`}
-              value={value}
-              onChange={(e) => handleFieldChange(field.key, e.target.value)}
-              placeholder="<p>HTML content...</p>"
-              rows={12}
-              className="font-mono text-sm resize-y"
-              required={field.required}
-            />
-            <p className="text-xs text-muted-foreground font-medium tracking-wide">
-              HTML/Markdown content will be rendered on the page
-            </p>
-          </div>
+          <RichTextEditor
+            value={value}
+            onChange={(html) => handleFieldChange(field.key, html)}
+            placeholder={`Enter ${field.label.toLowerCase()}`}
+          />
         );
 
       case 'image':
