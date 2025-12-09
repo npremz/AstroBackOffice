@@ -95,9 +95,9 @@ export default function Sidebar({
           >
             <div className="flex items-center gap-2">
               <Home className="h-5 w-5 text-primary" />
-              <h1 className="font-serif text-2xl font-semibold tracking-tight text-foreground">
+              <div className="text-2xl font-bold tracking-tight text-foreground">
                 Editorial CMS
-              </h1>
+              </div>
             </div>
             <p className="text-xs text-muted-foreground mt-1 font-medium tracking-wide ml-7">
               Content Management

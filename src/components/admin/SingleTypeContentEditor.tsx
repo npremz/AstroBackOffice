@@ -209,7 +209,7 @@ export default function SingleTypeContentEditor({ singleType, onBack, onSaveSucc
           <ChevronLeft className="h-5 w-5" />
         </Button>
         <div className="space-y-2">
-          <h2 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             Edit Content
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground font-medium tracking-wide capitalize">
@@ -233,7 +233,7 @@ export default function SingleTypeContentEditor({ singleType, onBack, onSaveSucc
                   <FileText className="h-5 w-5 text-accent" />
                 </div>
                 <div>
-                  <CardTitle className="font-serif text-xl sm:text-2xl">Content Fields</CardTitle>
+                  <CardTitle className="text-xl sm:text-2xl font-bold">Content Fields</CardTitle>
                   <CardDescription className="mt-2">
                     Fill in the content for this single type
                   </CardDescription>

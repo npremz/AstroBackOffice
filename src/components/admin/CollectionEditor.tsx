@@ -155,7 +155,7 @@ export default function CollectionEditor({ collection, onBack, onSaveSuccess }: 
           <ChevronLeft className="h-5 w-5" />
         </Button>
         <div className="space-y-2">
-          <h2 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             {collection ? 'Edit Collection' : 'New Collection'}
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground font-medium tracking-wide max-w-2xl">
@@ -175,7 +175,7 @@ export default function CollectionEditor({ collection, onBack, onSaveSuccess }: 
                 <Layers className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <CardTitle className="font-serif text-xl sm:text-2xl">Collection Details</CardTitle>
+                <CardTitle className="text-xl sm:text-2xl font-bold">Collection Details</CardTitle>
                 <CardDescription className="mt-1">
                   Set the unique identifier for this collection
                 </CardDescription>
@@ -215,7 +215,7 @@ export default function CollectionEditor({ collection, onBack, onSaveSuccess }: 
                   <Plus className="h-5 w-5 text-accent" />
                 </div>
                 <div>
-                  <CardTitle className="font-serif text-xl sm:text-2xl">Schema Fields</CardTitle>
+                  <CardTitle className="text-xl sm:text-2xl font-bold">Schema Fields</CardTitle>
                   <CardDescription className="mt-2">
                     Define the fields for entries in this collection
                   </CardDescription>

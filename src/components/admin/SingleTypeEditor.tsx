@@ -177,7 +177,7 @@ export default function SingleTypeEditor({ singleType, onBack, onSaveSuccess }: 
           <ChevronLeft className="h-5 w-5" />
         </Button>
         <div className="space-y-2">
-          <h2 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             {singleType ? 'Edit Single Type Schema' : 'New Single Type'}
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground font-medium tracking-wide max-w-2xl">
@@ -197,7 +197,7 @@ export default function SingleTypeEditor({ singleType, onBack, onSaveSuccess }: 
                 <Package className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <CardTitle className="font-serif text-xl sm:text-2xl">Single Type Details</CardTitle>
+                <CardTitle className="text-xl sm:text-2xl font-bold">Single Type Details</CardTitle>
                 <CardDescription className="mt-1">
                   Set the unique identifier and name for this single type
                 </CardDescription>
@@ -265,7 +265,7 @@ export default function SingleTypeEditor({ singleType, onBack, onSaveSuccess }: 
                   <Plus className="h-5 w-5 text-accent" />
                 </div>
                 <div>
-                  <CardTitle className="font-serif text-xl sm:text-2xl">Schema Fields</CardTitle>
+                  <CardTitle className="text-xl sm:text-2xl font-bold">Schema Fields</CardTitle>
                   <CardDescription className="mt-2">
                     Define the content fields for this single type
                   </CardDescription>

@@ -106,7 +106,7 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
             <ChevronLeft className="h-5 w-5" />
           </Button>
           <div className="space-y-2">
-            <h2 className="font-serif text-3xl sm:text-4xl font-semibold capitalize tracking-tight text-foreground">
+            <h2 className="text-3xl sm:text-4xl font-bold capitalize tracking-tight text-foreground">
               {collection.slug}
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground font-medium tracking-wide max-w-2xl">
@@ -152,7 +152,7 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
             <div className="rounded-2xl bg-gradient-to-br from-accent/10 to-primary/10 p-6 mb-6">
               <FileText className="h-12 w-12 text-accent" />
             </div>
-            <h3 className="font-serif text-2xl font-semibold mb-2">No entries yet</h3>
+            <h3 className="text-2xl font-bold mb-2">No entries yet</h3>
             <p className="text-sm sm:text-base text-muted-foreground text-center mb-8 max-w-md leading-relaxed">
               Create your first entry in the <span className="font-semibold text-foreground">{collection.slug}</span> collection
             </p>
@@ -181,7 +181,7 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
                 <CardHeader className="pb-4 bg-gradient-to-br from-muted/20 to-transparent">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0 space-y-3">
-                      <CardTitle className="font-serif text-xl sm:text-2xl truncate flex items-center gap-3 group-hover:text-accent transition-colors duration-200">
+                      <CardTitle className="text-xl sm:text-2xl font-bold truncate flex items-center gap-3 group-hover:text-accent transition-colors duration-200">
                         <div className="p-2 rounded-xl bg-gradient-to-br from-accent/10 to-primary/10 group-hover:from-accent/20 group-hover:to-primary/20 transition-all duration-300">
                           <FileText className="h-5 w-5 flex-shrink-0 text-accent" />
                         </div>

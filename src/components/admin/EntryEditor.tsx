@@ -263,7 +263,7 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
           <ChevronLeft className="h-5 w-5" />
         </Button>
         <div className="space-y-2">
-          <h2 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             {entry ? 'Edit Entry' : 'New Entry'}
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground font-medium tracking-wide capitalize">
@@ -283,7 +283,7 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
                 <Save className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <CardTitle className="font-serif text-xl sm:text-2xl">Meta Information</CardTitle>
+                <CardTitle className="text-xl sm:text-2xl font-bold">Meta Information</CardTitle>
                 <CardDescription className="mt-1">
                   Configure URL and template settings
                 </CardDescription>
@@ -349,7 +349,7 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
                   <FileText className="h-5 w-5 text-accent" />
                 </div>
                 <div>
-                  <CardTitle className="font-serif text-xl sm:text-2xl">Content</CardTitle>
+                  <CardTitle className="text-xl sm:text-2xl font-bold">Content</CardTitle>
                   <CardDescription className="mt-2">
                     Fill in the fields for this entry
                   </CardDescription>

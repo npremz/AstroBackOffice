@@ -129,7 +129,7 @@ export default function Dashboard({
                 <Layers className="h-6 w-6 text-primary" />
               </div>
               <div className="flex-1">
-                <CardTitle className="font-serif text-2xl group-hover:text-primary transition-colors duration-200">
+                <CardTitle className="text-2xl font-bold group-hover:text-primary transition-colors duration-200">
                   Collection Types
                 </CardTitle>
                 <CardDescription className="mt-1">
@@ -186,7 +186,7 @@ export default function Dashboard({
                 <Package className="h-6 w-6 text-accent" />
               </div>
               <div className="flex-1">
-                <CardTitle className="font-serif text-2xl group-hover:text-accent transition-colors duration-200">
+                <CardTitle className="text-2xl font-bold group-hover:text-accent transition-colors duration-200">
                   Single Types
                 </CardTitle>
                 <CardDescription className="mt-1">
@@ -243,7 +243,7 @@ export default function Dashboard({
             <Mail className="h-6 w-6 text-primary" />
           </div>
           <div className="space-y-2">
-            <h3 className="font-serif text-xl font-semibold text-foreground">
+            <h3 className="text-xl font-bold text-foreground">
               Besoin d'aide ou avez des suggestions ?
             </h3>
             <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -276,7 +276,7 @@ export default function Dashboard({
             <div className="p-2 rounded-xl bg-gradient-to-br from-accent/10 to-primary/10">
               <Settings className="h-5 w-5 text-accent" />
             </div>
-            <CardTitle className="font-serif text-xl">Conseils rapides</CardTitle>
+            <CardTitle className="text-xl font-bold">Conseils rapides</CardTitle>
           </div>
         </CardHeader>
         <CardContent>

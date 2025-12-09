@@ -32,7 +32,7 @@ export default function CollectionsList({
       {/* Editorial Header */}
       <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between stagger-fade-in stagger-1">
         <div className="space-y-2">
-          <h2 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             Collections
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground font-medium tracking-wide max-w-2xl">
@@ -56,7 +56,7 @@ export default function CollectionsList({
             <div className="rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 p-6 mb-6">
               <FolderOpen className="h-12 w-12 text-primary" />
             </div>
-            <h3 className="font-serif text-2xl font-semibold mb-2">No collections yet</h3>
+            <h3 className="text-2xl font-bold mb-2">No collections yet</h3>
             <p className="text-sm sm:text-base text-muted-foreground text-center mb-8 max-w-md leading-relaxed">
               Begin your content journey by creating your first collection to organize and structure your editorial content
             </p>
@@ -86,7 +86,7 @@ export default function CollectionsList({
                 <CardHeader className="pb-4 bg-gradient-to-br from-muted/20 to-transparent">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0 space-y-3">
-                      <CardTitle className="font-serif text-xl sm:text-2xl capitalize truncate flex items-center gap-3 group-hover:text-primary transition-colors duration-200">
+                      <CardTitle className="text-xl sm:text-2xl font-bold capitalize truncate flex items-center gap-3 group-hover:text-primary transition-colors duration-200">
                         <div className="p-2 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 group-hover:from-primary/20 group-hover:to-accent/20 transition-all duration-300">
                           <Layers className="h-5 w-5 flex-shrink-0 text-primary" />
                         </div>
