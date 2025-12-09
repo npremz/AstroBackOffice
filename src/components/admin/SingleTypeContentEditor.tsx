@@ -221,87 +221,145 @@ export default function SingleTypeContentEditor({ singleType, onBack, onSaveSucc
           <p className="text-sm sm:text-base text-muted-foreground font-medium tracking-wide capitalize">
             {singleType.name}
           </p>
-          <Badge variant="secondary" className="font-mono text-xs bg-primary/10 text-primary border border-primary/20">
-            {singleType.slug}
-          </Badge>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Content Fields Card */}
-        <Card className="card-float bg-card border-border/50 overflow-hidden stagger-fade-in stagger-2">
-          <div className="h-1 w-full bg-gradient-to-r from-accent via-primary to-accent/50" />
+      {/* Two column layout on desktop */}
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8">
+        {/* Main Content Area */}
+        <div className="space-y-8">
+          {/* Content Fields Card */}
+          <Card className="card-float bg-card border-border/50 overflow-hidden stagger-fade-in stagger-2">
+            <div className="h-1 w-full bg-gradient-to-r from-accent via-primary to-accent/50" />
 
-          <CardHeader className="bg-gradient-to-br from-muted/20 to-transparent">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-accent/10 to-primary/10">
-                  <FileText className="h-5 w-5 text-accent" />
+            <CardHeader className="bg-gradient-to-br from-muted/20 to-transparent">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-accent/10 to-primary/10">
+                    <FileText className="h-5 w-5 text-accent" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl sm:text-2xl font-bold">Content Fields</CardTitle>
+                    <CardDescription className="mt-2">
+                      Fill in the content for this single type
+                    </CardDescription>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-xl sm:text-2xl font-bold">Content Fields</CardTitle>
-                  <CardDescription className="mt-2">
-                    Fill in the content for this single type
-                  </CardDescription>
-                </div>
+                <Badge variant="outline" className="font-medium bg-accent/10 text-accent border-accent/30 px-3 py-1.5">
+                  {singleType.schema.length} {singleType.schema.length === 1 ? 'field' : 'fields'}
+                </Badge>
               </div>
-              <Badge variant="outline" className="font-medium bg-accent/10 text-accent border-accent/30 px-3 py-1.5">
-                {singleType.schema.length} {singleType.schema.length === 1 ? 'field' : 'fields'}
-              </Badge>
-            </div>
-          </CardHeader>
+            </CardHeader>
 
-          <CardContent className="space-y-6 pt-6">
-            {singleType.schema.map((field, index) => (
-              <div
-                key={field.key}
-                className={`space-y-3 p-5 sm:p-6 rounded-xl bg-gradient-to-br from-muted/10 to-background border border-border/50 stagger-fade-in stagger-${Math.min(index + 3, 8)}`}
-              >
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <Label htmlFor={`field-${field.key}`} className="text-sm font-semibold tracking-wide">
-                    {field.label}
-                    {field.required && <span className="text-destructive ml-1">*</span>}
-                  </Label>
-                  <Badge variant="secondary" className="text-xs font-medium bg-accent/10 text-accent border border-accent/20">
-                    {field.type}
+            <CardContent className="space-y-6 pt-6">
+              {singleType.schema.map((field, index) => (
+                <div
+                  key={field.key}
+                  className={`space-y-3 p-5 sm:p-6 rounded-xl bg-gradient-to-br from-muted/10 to-background border border-border/50 stagger-fade-in stagger-${Math.min(index + 3, 8)}`}
+                >
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <Label htmlFor={`field-${field.key}`} className="text-sm font-semibold tracking-wide">
+                      {field.label}
+                      {field.required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                    <Badge variant="secondary" className="text-xs font-medium bg-accent/10 text-accent border border-accent/20">
+                      {field.type}
+                    </Badge>
+                  </div>
+                  {renderField(field)}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Error Alert */}
+          {error && (
+            <Alert variant="destructive" className="stagger-fade-in">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="font-medium">{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {/* Mobile Actions - Sticky Bottom */}
+          <div className="lg:hidden flex flex-col gap-3 sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 -mx-4 border-t border-border/50">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onBack}
+              className="hover-lift"
+              size="lg"
+            >
+              <span className="font-semibold">Cancel</span>
+            </Button>
+            <Button
+              type="submit"
+              disabled={saving}
+              className="bg-accent hover:bg-accent/90 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
+              size="lg"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              <span className="font-semibold">
+                {saving ? 'Saving...' : 'Update Content'}
+              </span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Right Sidebar - Desktop Only */}
+        <div className="hidden lg:block">
+          <div className="space-y-6 stagger-fade-in stagger-3">
+            {/* Info Card */}
+            <Card className="card-float bg-card border-border/50 overflow-hidden">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-bold">Single Type Info</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-muted-foreground">Name</p>
+                  <p className="text-sm font-medium">{singleType.name}</p>
+                </div>
+                <div className="space-y-2 pt-2 border-t">
+                  <p className="text-sm font-semibold text-muted-foreground">Slug</p>
+                  <Badge variant="secondary" className="font-mono text-xs bg-primary/10 text-primary border border-primary/20">
+                    {singleType.slug}
                   </Badge>
                 </div>
-                {renderField(field)}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
 
-        {/* Error Alert */}
-        {error && (
-          <Alert variant="destructive" className="stagger-fade-in">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="font-medium">{error}</AlertDescription>
-          </Alert>
-        )}
+            {/* Actions Card - Sticky when scrolling */}
+            <div className="sticky top-8">
+              <Card className="card-float bg-card border-border/50 overflow-hidden">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-bold">Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button
+                    type="submit"
+                    disabled={saving}
+                    className="w-full bg-accent hover:bg-accent/90 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
+                    size="lg"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    <span className="font-semibold">
+                      {saving ? 'Saving...' : 'Update Content'}
+                    </span>
+                  </Button>
 
-        {/* Actions */}
-        <div className="flex flex-col-reverse sm:flex-row gap-4 sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 -mx-4 border-t border-border/50 sm:static sm:bg-transparent sm:p-0 sm:border-0 stagger-fade-in stagger-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onBack}
-            className="w-full sm:w-auto hover-lift"
-            size="lg"
-          >
-            <span className="font-semibold">Cancel</span>
-          </Button>
-          <Button
-            type="submit"
-            disabled={saving}
-            className="w-full sm:w-auto sm:ml-auto bg-accent hover:bg-accent/90 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
-            size="lg"
-          >
-            <Save className="h-4 w-4 mr-2" />
-            <span className="font-semibold">
-              {saving ? 'Saving...' : 'Update Content'}
-            </span>
-          </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={onBack}
+                    className="w-full hover-lift"
+                    size="lg"
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-2" />
+                    <span className="font-semibold">Cancel</span>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </form>
 

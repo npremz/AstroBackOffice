@@ -116,85 +116,90 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
     });
   };
 
+  const publishedCount = entries.filter(e => e.isPublished).length;
+  const draftCount = entries.filter(e => e.hasDraft).length;
+
   return (
     <div className="space-y-8">
       {/* Editorial Header */}
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between stagger-fade-in stagger-1">
-        <div className="flex items-start gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onBack}
-            className="hidden md:flex hover-lift mt-1"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <div className="space-y-2">
-            <h2 className="text-3xl sm:text-4xl font-bold capitalize tracking-tight text-foreground">
-              {collection.slug}
-            </h2>
-            <p className="text-sm sm:text-base text-muted-foreground font-medium tracking-wide max-w-2xl">
-              Manage and organize entries in your collection
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <Button
-            onClick={() => onEditSchema(collection)}
-            variant="outline"
-            className="w-full sm:w-auto border-border/50 hover:bg-accent/10 hover:border-accent/50 transition-all duration-200"
-            size="lg"
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            <span className="font-semibold">Edit Schema</span>
-          </Button>
-          <Button
-            onClick={onCreate}
-            className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
-            size="lg"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            <span className="font-semibold">New Entry</span>
-          </Button>
+      <div className="flex items-start gap-4 stagger-fade-in stagger-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onBack}
+          className="hidden md:flex hover-lift mt-1"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+        <div className="space-y-2">
+          <h2 className="text-3xl sm:text-4xl font-bold capitalize tracking-tight text-foreground">
+            {collection.slug}
+          </h2>
+          <p className="text-sm sm:text-base text-muted-foreground font-medium tracking-wide max-w-2xl">
+            Manage and organize entries in your collection
+          </p>
         </div>
       </div>
 
-      {/* Loading State */}
-      {loading ? (
-        <Card className="card-float stagger-fade-in stagger-2">
-          <CardContent className="flex items-center justify-center py-16">
-            <div className="flex items-center gap-3 text-muted-foreground">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <span className="font-medium">Loading entries...</span>
-            </div>
-          </CardContent>
-        </Card>
-      ) : entries.length === 0 ? (
-        /* Empty State */
-        <Card className="border-dashed border-2 border-border/50 bg-gradient-to-br from-muted/30 to-background stagger-fade-in stagger-2">
-          <CardContent className="flex flex-col items-center justify-center py-16 px-4">
-            <div className="rounded-2xl bg-gradient-to-br from-accent/10 to-primary/10 p-6 mb-6">
-              <FileText className="h-12 w-12 text-accent" />
-            </div>
-            <h3 className="text-2xl font-bold mb-2">No entries yet</h3>
-            <p className="text-sm sm:text-base text-muted-foreground text-center mb-8 max-w-md leading-relaxed">
-              Create your first entry in the <span className="font-semibold text-foreground">{collection.slug}</span> collection
-            </p>
-            <Button
-              onClick={onCreate}
-              size="lg"
-              className="bg-accent hover:bg-accent/90 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              <span className="font-semibold">Create your first entry</span>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        /* Entries List - Editorial Layout */
-        <>
-          <div className="grid grid-cols-1 gap-6">
-            {entries.map((entry, index) => (
+      {/* Mobile Actions - Show on mobile/tablet */}
+      <div className="lg:hidden flex flex-col gap-3 stagger-fade-in stagger-2">
+        <Button
+          onClick={onCreate}
+          className="w-full bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
+          size="lg"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          <span className="font-semibold">New Entry</span>
+        </Button>
+        <Button
+          onClick={() => onEditSchema(collection)}
+          variant="outline"
+          className="w-full border-border/50 hover:bg-accent/10 hover:border-accent/50 transition-all duration-200"
+          size="lg"
+        >
+          <Settings className="h-4 w-4 mr-2" />
+          <span className="font-semibold">Edit Schema</span>
+        </Button>
+      </div>
+
+      {/* Two column layout on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8">
+        {/* Main Content Area */}
+        <div className="space-y-6">
+          {/* Loading State */}
+          {loading ? (
+            <Card className="card-float stagger-fade-in stagger-2">
+              <CardContent className="flex items-center justify-center py-16">
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <span className="font-medium">Loading entries...</span>
+                </div>
+              </CardContent>
+            </Card>
+          ) : entries.length === 0 ? (
+            /* Empty State */
+            <Card className="border-dashed border-2 border-border/50 bg-gradient-to-br from-muted/30 to-background stagger-fade-in stagger-2">
+              <CardContent className="flex flex-col items-center justify-center py-16 px-4">
+                <div className="rounded-2xl bg-gradient-to-br from-accent/10 to-primary/10 p-6 mb-6">
+                  <FileText className="h-12 w-12 text-accent" />
+                </div>
+                <h3 className="text-2xl font-bold mb-2">No entries yet</h3>
+                <p className="text-sm sm:text-base text-muted-foreground text-center mb-8 max-w-md leading-relaxed">
+                  Create your first entry in the <span className="font-semibold text-foreground">{collection.slug}</span> collection
+                </p>
+                <Button
+                  onClick={onCreate}
+                  size="lg"
+                  className="bg-accent hover:bg-accent/90 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  <span className="font-semibold">Create your first entry</span>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            /* Entries List */
+            entries.map((entry, index) => (
               <Card
                 key={entry.id}
                 className={`group card-float bg-card border-border/50 overflow-hidden stagger-fade-in stagger-${Math.min(index + 2, 8)}`}
@@ -287,23 +292,96 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
                   </Button>
                 </CardFooter>
               </Card>
-            ))}
-          </div>
+            ))
+          )}
+        </div>
 
-          {/* Editorial Stats */}
-          <div className={`rounded-xl border border-border/50 bg-gradient-to-br from-card to-muted/20 p-6 sm:p-8 card-float stagger-fade-in stagger-${Math.min(entries.length + 2, 8)}`}>
-            <div className="flex items-center gap-3">
-              <div className="h-3 w-3 rounded-full bg-gradient-to-r from-accent to-accent/50" />
-              <span className="text-sm font-medium text-muted-foreground tracking-wide uppercase">
-                Total Entries
-              </span>
-              <p className="font-numbers text-3xl sm:text-4xl text-foreground ml-auto">
-                {entries.length}
-              </p>
+        {/* Right Sidebar - Desktop Only */}
+        <div className="hidden lg:block">
+          <div className="space-y-6 stagger-fade-in stagger-3">
+            {/* Collection Info Card */}
+            <Card className="card-float bg-card border-border/50 overflow-hidden">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-bold">Collection Info</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-muted-foreground">Name</p>
+                  <p className="text-sm font-medium capitalize">{collection.slug}</p>
+                </div>
+                <div className="space-y-2 pt-2 border-t">
+                  <p className="text-sm font-semibold text-muted-foreground">Schema Fields</p>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary border border-primary/20">
+                    {collection.schema.length} {collection.schema.length === 1 ? 'field' : 'fields'}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Stats Card */}
+            {!loading && entries.length > 0 && (
+              <Card className="card-float bg-card border-border/50 overflow-hidden">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-bold">Statistics</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-muted/20 to-background border border-border/30">
+                      <span className="text-sm font-medium text-muted-foreground">Total Entries</span>
+                      <span className="text-2xl font-bold text-foreground">{entries.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-green-500/5 to-background border border-green-500/20">
+                      <span className="text-sm font-medium text-muted-foreground">Published</span>
+                      <span className="text-2xl font-bold text-green-600">{publishedCount}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-amber-500/5 to-background border border-amber-500/20">
+                      <span className="text-sm font-medium text-muted-foreground">Drafts</span>
+                      <span className="text-2xl font-bold text-amber-600">{draftCount}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Actions Card - Sticky */}
+            <div className="sticky top-8">
+              <Card className="card-float bg-card border-border/50 overflow-hidden">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-bold">Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button
+                    onClick={onCreate}
+                    className="w-full bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
+                    size="lg"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    <span className="font-semibold">New Entry</span>
+                  </Button>
+                  <Button
+                    onClick={() => onEditSchema(collection)}
+                    variant="outline"
+                    className="w-full border-border/50 hover:bg-accent/10 hover:border-accent/50 transition-all duration-200"
+                    size="lg"
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    <span className="font-semibold">Edit Schema</span>
+                  </Button>
+                  <Button
+                    onClick={onBack}
+                    variant="ghost"
+                    className="w-full hover-lift"
+                    size="lg"
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-2" />
+                    <span className="font-semibold">Back</span>
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </div>
-        </>
-      )}
+        </div>
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

@@ -430,7 +430,7 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
           <ChevronLeft className="h-5 w-5" />
         </Button>
         <div className="space-y-2">
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap lg:hidden">
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
               {entry ? 'Edit Entry' : 'New Entry'}
             </h2>
@@ -445,187 +445,275 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
               </Badge>
             )}
           </div>
+          <h2 className="hidden lg:block text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+            {entry ? 'Edit Entry' : 'New Entry'}
+          </h2>
           <p className="text-sm sm:text-base text-muted-foreground font-medium tracking-wide capitalize">
             {collection.slug} Collection
           </p>
         </div>
       </div>
 
-      <div className="space-y-8">
-        {/* Meta Information Card */}
-        <Card className="card-float bg-card border-border/50 overflow-hidden stagger-fade-in stagger-2">
-          <div className="h-1 w-full bg-gradient-to-r from-primary via-accent to-primary/50" />
+      {/* Two column layout on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8">
+        {/* Main Content Area */}
+        <div className="space-y-8">
+          {/* Content Fields Card */}
+          <Card className="card-float bg-card border-border/50 overflow-hidden stagger-fade-in stagger-2">
+            <div className="h-1 w-full bg-gradient-to-r from-accent via-primary to-accent/50" />
 
-          <CardHeader className="bg-gradient-to-br from-muted/20 to-transparent">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10">
-                <Save className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="text-xl sm:text-2xl font-bold">Meta Information</CardTitle>
-                <CardDescription className="mt-1">
-                  Configure URL and template settings
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-
-          <CardContent className="space-y-5 pt-6">
-            <div className="grid grid-cols-1 gap-5">
-              {/* Slug with collection prefix */}
-              <div className="space-y-3">
-                <Label htmlFor="slugSuffix" className="text-sm font-semibold tracking-wide">
-                  Slug <span className="text-destructive">*</span>
-                </Label>
-                <div className="flex items-stretch gap-2">
-                  <div className="flex items-center bg-muted/70 px-4 rounded-lg border border-border/50 text-sm text-muted-foreground font-mono font-medium">
-                    {collection.slug}/
+            <CardHeader className="bg-gradient-to-br from-muted/20 to-transparent">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-accent/10 to-primary/10">
+                    <FileText className="h-5 w-5 text-accent" />
                   </div>
-                  <Input
-                    id="slugSuffix"
-                    type="text"
-                    value={slugSuffix}
-                    onChange={(e) => setSlugSuffix(e.target.value)}
-                    placeholder="my-entry"
-                    required
-                    className="flex-1 h-11 text-base"
-                  />
+                  <div>
+                    <CardTitle className="text-xl sm:text-2xl font-bold">Content</CardTitle>
+                    <CardDescription className="mt-2">
+                      Fill in the fields for this entry
+                    </CardDescription>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground font-medium tracking-wide">
-                  URL path: <code className="bg-muted/70 px-2 py-1 rounded font-mono">/{fullSlug}</code>
-                </p>
+                <Badge variant="outline" className="font-medium bg-accent/10 text-accent border-accent/30 px-3 py-1.5">
+                  {collection.schema.length} {collection.schema.length === 1 ? 'field' : 'fields'}
+                </Badge>
               </div>
+            </CardHeader>
 
-              {/* Template */}
-              <div className="space-y-3">
-                <Label htmlFor="template" className="text-sm font-semibold tracking-wide">
-                  Template
-                </Label>
-                <Select value={template} onValueChange={setTemplate}>
-                  <SelectTrigger className="h-11 text-base">
-                    <SelectValue placeholder="Select a template" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={getDefaultLayout(collection.slug)}>
-                      {getDefaultLayout(collection.slug)}
-                    </SelectItem>
-                    <SelectItem value="BaseLayout">
-                      BaseLayout
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground font-medium tracking-wide">
-                  Use collection layout or basic layout
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Content Fields Card */}
-        <Card className="card-float bg-card border-border/50 overflow-hidden stagger-fade-in stagger-3">
-          <div className="h-1 w-full bg-gradient-to-r from-accent via-primary to-accent/50" />
-
-          <CardHeader className="bg-gradient-to-br from-muted/20 to-transparent">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-accent/10 to-primary/10">
-                  <FileText className="h-5 w-5 text-accent" />
+            <CardContent className="space-y-6 pt-6">
+              {collection.schema.map((field, index) => (
+                <div
+                  key={field.key}
+                  className={`space-y-3 p-5 sm:p-6 rounded-xl bg-gradient-to-br from-muted/10 to-background border border-border/50 stagger-fade-in stagger-${Math.min(index + 3, 8)}`}
+                >
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <Label htmlFor={`field-${field.key}`} className="text-sm font-semibold tracking-wide">
+                      {field.label}
+                      {field.required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                    <Badge variant="secondary" className="text-xs font-medium bg-accent/10 text-accent border border-accent/20">
+                      {field.type}
+                    </Badge>
+                  </div>
+                  {renderField(field)}
                 </div>
-                <div>
-                  <CardTitle className="text-xl sm:text-2xl font-bold">Content</CardTitle>
-                  <CardDescription className="mt-2">
-                    Fill in the fields for this entry
-                  </CardDescription>
-                </div>
-              </div>
-              <Badge variant="outline" className="font-medium bg-accent/10 text-accent border-accent/30 px-3 py-1.5">
-                {collection.schema.length} {collection.schema.length === 1 ? 'field' : 'fields'}
-              </Badge>
-            </div>
-          </CardHeader>
+              ))}
+            </CardContent>
+          </Card>
 
-          <CardContent className="space-y-6 pt-6">
-            {collection.schema.map((field, index) => (
-              <div
-                key={field.key}
-                className={`space-y-3 p-5 sm:p-6 rounded-xl bg-gradient-to-br from-muted/10 to-background border border-border/50 stagger-fade-in stagger-${Math.min(index + 4, 8)}`}
-              >
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <Label htmlFor={`field-${field.key}`} className="text-sm font-semibold tracking-wide">
-                    {field.label}
-                    {field.required && <span className="text-destructive ml-1">*</span>}
+          {/* Error Alert */}
+          {error && (
+            <Alert variant="destructive" className="stagger-fade-in">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="font-medium">{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {/* Mobile Actions - Sticky Bottom */}
+          <div className="lg:hidden flex flex-col gap-3 sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 -mx-4 border-t border-border/50">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onBack}
+              className="hover-lift"
+              size="lg"
+            >
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              <span className="font-semibold">Cancel</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handlePreview}
+              className="hover-lift"
+              size="lg"
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              <span className="font-semibold">Preview</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleSaveDraft}
+              disabled={saving || publishing}
+              className="hover-lift"
+              size="lg"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              <span className="font-semibold">
+                {saving ? 'Saving...' : 'Save Draft'}
+              </span>
+            </Button>
+
+            <Button
+              type="button"
+              onClick={handlePublish}
+              disabled={saving || publishing}
+              className="bg-accent hover:bg-accent/90 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
+              size="lg"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              <span className="font-semibold">
+                {publishing ? 'Publishing...' : entry && isPublished ? 'Update & Publish' : 'Publish'}
+              </span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Right Sidebar - Desktop Only */}
+        <div className="hidden lg:block">
+          <div className="space-y-6 stagger-fade-in stagger-3">
+            {/* Status Card */}
+            <Card className="card-float bg-card border-border/50 overflow-hidden">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-bold">Status</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {hasDraft && (
+                    <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+                      Draft Saved
+                    </Badge>
+                  )}
+                  {entry && isPublished && (
+                    <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20">
+                      Published
+                    </Badge>
+                  )}
+                  {!entry && (
+                    <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 border-blue-500/20">
+                      New Entry
+                    </Badge>
+                  )}
+                </div>
+                {entry && (
+                  <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t">
+                    {isPublished && (
+                      <p>Published: {new Date(entry.publishedAt).toLocaleDateString()}</p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Meta Information Card */}
+            <Card className="card-float bg-card border-border/50 overflow-hidden">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-bold">Meta Information</CardTitle>
+                <CardDescription>
+                  URL and template settings
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="space-y-5">
+                {/* Slug with collection prefix */}
+                <div className="space-y-2">
+                  <Label htmlFor="slugSuffix" className="text-sm font-semibold tracking-wide">
+                    Slug <span className="text-destructive">*</span>
                   </Label>
-                  <Badge variant="secondary" className="text-xs font-medium bg-accent/10 text-accent border border-accent/20">
-                    {field.type}
-                  </Badge>
+                  <div className="space-y-2">
+                    <div className="text-xs font-mono bg-muted/70 px-3 py-2 rounded-lg border border-border/50 text-muted-foreground">
+                      {collection.slug}/
+                    </div>
+                    <Input
+                      id="slugSuffix"
+                      type="text"
+                      value={slugSuffix}
+                      onChange={(e) => setSlugSuffix(e.target.value)}
+                      placeholder="my-entry"
+                      required
+                      className="h-10 text-sm"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    <code className="bg-muted/70 px-2 py-0.5 rounded font-mono text-xs">/{fullSlug}</code>
+                  </p>
                 </div>
-                {renderField(field)}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
 
-        {/* Error Alert */}
-        {error && (
-          <Alert variant="destructive" className="stagger-fade-in">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="font-medium">{error}</AlertDescription>
-          </Alert>
-        )}
+                {/* Template */}
+                <div className="space-y-2">
+                  <Label htmlFor="template" className="text-sm font-semibold tracking-wide">
+                    Template
+                  </Label>
+                  <Select value={template} onValueChange={setTemplate}>
+                    <SelectTrigger className="h-10 text-sm">
+                      <SelectValue placeholder="Select a template" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={getDefaultLayout(collection.slug)}>
+                        {getDefaultLayout(collection.slug)}
+                      </SelectItem>
+                      <SelectItem value="BaseLayout">
+                        BaseLayout
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-3 sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 -mx-4 border-t border-border/50 sm:static sm:bg-transparent sm:p-0 sm:border-0 stagger-fade-in stagger-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onBack}
-            className="hover-lift"
-            size="lg"
-          >
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            <span className="font-semibold">Cancel</span>
-          </Button>
+            {/* Actions Card - Sticky at bottom when scrolling */}
+            <div className="sticky top-8">
+              <Card className="card-float bg-card border-border/50 overflow-hidden">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-bold">Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePreview}
+                    className="w-full hover-lift"
+                    size="lg"
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    <span className="font-semibold">Preview</span>
+                  </Button>
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handlePreview}
-            className="hover-lift"
-            size="lg"
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            <span className="font-semibold">Preview</span>
-          </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleSaveDraft}
+                    disabled={saving || publishing}
+                    className="w-full hover-lift"
+                    size="lg"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    <span className="font-semibold">
+                      {saving ? 'Saving...' : 'Save Draft'}
+                    </span>
+                  </Button>
 
-          <div className="flex-1" />
+                  <Button
+                    type="button"
+                    onClick={handlePublish}
+                    disabled={saving || publishing}
+                    className="w-full bg-accent hover:bg-accent/90 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
+                    size="lg"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    <span className="font-semibold">
+                      {publishing ? 'Publishing...' : entry && isPublished ? 'Update & Publish' : 'Publish'}
+                    </span>
+                  </Button>
 
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleSaveDraft}
-            disabled={saving || publishing}
-            className="hover-lift"
-            size="lg"
-          >
-            <Save className="h-4 w-4 mr-2" />
-            <span className="font-semibold">
-              {saving ? 'Saving...' : 'Save Draft'}
-            </span>
-          </Button>
-
-          <Button
-            type="button"
-            onClick={handlePublish}
-            disabled={saving || publishing}
-            className="bg-accent hover:bg-accent/90 shadow-lg hover:shadow-xl transition-all duration-300 hover-lift"
-            size="lg"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            <span className="font-semibold">
-              {publishing ? 'Publishing...' : entry && isPublished ? 'Update & Publish' : 'Publish'}
-            </span>
-          </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={onBack}
+                    className="w-full hover-lift"
+                    size="lg"
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-2" />
+                    <span className="font-semibold">Cancel</span>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
 
