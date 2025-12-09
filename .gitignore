@@ -28,3 +28,7 @@ pnpm-debug.log*
 *.db-shm
 *.db-wal
 drizzle/
+
+# uploaded media
+public/uploads/*
+!public/uploads/.gitkeep

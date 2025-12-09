@@ -28,6 +28,11 @@ interface Entry {
   publishedAt: Date;
 }
 
+interface EntryWithDraft extends Entry {
+  hasDraft?: boolean;
+  isPublished?: boolean;
+}
+
 interface Props {
   collection: Collection;
   onBack: () => void;
@@ -37,7 +42,7 @@ interface Props {
 }
 
 export default function EntriesList({ collection, onBack, onCreate, onEdit, onEditSchema }: Props) {
-  const [entries, setEntries] = useState<Entry[]>([]);
+  const [entries, setEntries] = useState<EntryWithDraft[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<Entry | null>(null);
@@ -50,8 +55,27 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
   const fetchEntries = async () => {
     setLoading(true);
     const response = await fetch(`/api/entries?collectionId=${collection.id}`);
-    const data = await response.json();
-    setEntries(data);
+    const data: Entry[] = await response.json();
+
+    // Check for drafts for each entry
+    const entriesWithDraftStatus = await Promise.all(
+      data.map(async (entry) => {
+        const isPublished = new Date(entry.publishedAt).getTime() > 0;
+        let hasDraft = false;
+
+        // Check if there's a draft for this entry
+        try {
+          const draftResponse = await fetch(`/api/entries/${entry.id}/draft`);
+          hasDraft = draftResponse.ok;
+        } catch {
+          hasDraft = false;
+        }
+
+        return { ...entry, hasDraft, isPublished };
+      })
+    );
+
+    setEntries(entriesWithDraftStatus);
     setLoading(false);
   };
 
@@ -191,9 +215,19 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
                         <Badge variant="secondary" className="font-mono text-xs bg-accent/10 text-accent border border-accent/20 px-3 py-1">
                           /{entry.slug}
                         </Badge>
-                        {entry.publishedAt && (
+                        {entry.hasDraft && (
+                          <Badge variant="secondary" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20 px-3 py-1">
+                            Draft
+                          </Badge>
+                        )}
+                        {entry.isPublished && (
+                          <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-600 border-green-500/20 px-3 py-1">
+                            Published
+                          </Badge>
+                        )}
+                        {entry.publishedAt && entry.isPublished && (
                           <span className="text-xs font-medium text-muted-foreground tracking-wide">
-                            Published {formatDate(entry.publishedAt)}
+                            {formatDate(entry.publishedAt)}
                           </span>
                         )}
                       </CardDescription>

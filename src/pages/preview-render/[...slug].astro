@@ -1,0 +1,175 @@
+---
+// Get preview ID from query params
+const previewId = Astro.url.searchParams.get('id');
+
+if (!previewId) {
+  return new Response('Preview ID required', { status: 400 });
+}
+
+// Fetch preview data
+let previewData;
+try {
+  const response = await fetch(`${Astro.url.origin}/api/preview?id=${previewId}`);
+  if (!response.ok) {
+    throw new Error('Preview not found');
+  }
+  previewData = await response.json();
+} catch (error) {
+  return Astro.redirect('/preview-error');
+}
+
+const { template, data, collection, slug } = previewData;
+
+// Helper function to get valid template for collection
+function getDefaultLayout(collectionSlug: string): string {
+  const singular = collectionSlug.endsWith('s') && collectionSlug !== 'news'
+    ? collectionSlug.slice(0, -1)
+    : collectionSlug;
+  return `${singular.charAt(0).toUpperCase() + singular.slice(1)}Layout`;
+}
+
+// Validate template - only allow collection default or BaseLayout
+const defaultLayout = getDefaultLayout(collection);
+const validTemplates = [defaultLayout, 'BaseLayout'];
+const validatedTemplate = validTemplates.includes(template) ? template : defaultLayout;
+
+// Create entry object that matches what layouts expect
+const entry = {
+  id: 0, // Preview doesn't have a real ID
+  slug: slug,
+  data: data,
+  publishedAt: new Date(), // Use current date for preview
+};
+
+// Dynamic import of the correct layout
+let LayoutComponent;
+let layoutProps;
+
+try {
+  switch (validatedTemplate) {
+    case 'ServiceLayout':
+      LayoutComponent = (await import('@/layouts/ServiceLayout.astro')).default;
+      layoutProps = { entry };
+      break;
+    case 'BlogLayout':
+      LayoutComponent = (await import('@/layouts/BlogLayout.astro')).default;
+      layoutProps = { entry };
+      break;
+    default:
+      LayoutComponent = (await import('@/layouts/BaseLayout.astro')).default;
+      layoutProps = { title: data.title || 'Preview' };
+  }
+} catch (error) {
+  console.error('Failed to load layout:', error);
+  LayoutComponent = (await import('@/layouts/BaseLayout.astro')).default;
+  layoutProps = { title: data.title || 'Preview' };
+}
+---
+
+{/* Render with layout - ServiceLayout and BlogLayout render their own content */}
+{(validatedTemplate === 'ServiceLayout' || validatedTemplate === 'BlogLayout') ? (
+  <>
+    <!-- Preview Banner (outside the layout) -->
+    <div class="fixed top-0 left-0 right-0 z-[9999] bg-amber-500 border-b-2 border-amber-600 shadow-lg">
+      <div class="container mx-auto px-4 py-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="bg-amber-600 text-white px-3 py-1 rounded-lg font-bold text-xs">
+              PREVIEW MODE
+            </div>
+            <p class="text-amber-950 font-medium text-xs hidden sm:block">
+              Using {validatedTemplate} • {collection}/{slug}
+            </p>
+          </div>
+          <button
+            onclick="window.close()"
+            class="px-3 py-1 bg-white text-amber-900 rounded-lg font-medium text-xs hover:bg-amber-50 transition-colors"
+          >
+            Close Preview
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Add padding to account for fixed banner -->
+    <div class="pt-12">
+      <LayoutComponent {...layoutProps} />
+    </div>
+  </>
+) : (
+  <LayoutComponent {...layoutProps}>
+    <!-- Preview Banner -->
+    <div class="sticky top-0 z-50 bg-amber-500 border-b-2 border-amber-600 shadow-lg">
+      <div class="container mx-auto px-4 py-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="bg-amber-600 text-white px-3 py-1 rounded-lg font-bold text-xs">
+              PREVIEW MODE
+            </div>
+            <p class="text-amber-950 font-medium text-xs hidden sm:block">
+              Using {validatedTemplate} • {collection}/{slug}
+            </p>
+          </div>
+          <button
+            onclick="window.close()"
+            class="px-3 py-1 bg-white text-amber-900 rounded-lg font-medium text-xs hover:bg-amber-50 transition-colors"
+          >
+            Close Preview
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content rendering for BaseLayout -->
+    <div class="container mx-auto px-4 py-12">
+      <div class="max-w-4xl mx-auto space-y-8">
+        {data.title && (
+          <h1 class="text-4xl md:text-5xl font-bold tracking-tight">
+            {data.title}
+          </h1>
+        )}
+
+        {(data.image || data.cover) && (
+          <div class="rounded-xl overflow-hidden shadow-lg">
+            <img
+              src={data.image || data.cover}
+              alt={data.title || 'Preview'}
+              class="w-full h-auto"
+            />
+          </div>
+        )}
+
+        {data.description && (
+          <p class="text-lg text-muted-foreground leading-relaxed">
+            {data.description}
+          </p>
+        )}
+
+        {data.content && (
+          <div class="prose prose-lg max-w-none" set:html={data.content} />
+        )}
+
+        {data.author && (
+          <div class="flex items-center gap-3 pt-8 border-t border-border">
+            <span class="text-sm text-muted-foreground">Written by</span>
+            <span class="font-semibold">{data.author}</span>
+          </div>
+        )}
+
+        {data.price !== undefined && (
+          <div class="p-6 bg-primary/5 rounded-xl border border-primary/20">
+            <p class="text-sm text-muted-foreground mb-1">Price</p>
+            <p class="text-3xl font-bold text-primary">
+              ${data.price}
+            </p>
+          </div>
+        )}
+
+        <!-- Debug info -->
+        <details class="mt-12 p-4 bg-muted rounded-lg text-sm">
+          <summary class="cursor-pointer font-semibold">Preview Data (Debug)</summary>
+          <pre class="mt-4 overflow-x-auto"><code>{JSON.stringify(data, null, 2)}</code></pre>
+        </details>
+      </div>
+    </div>
+  </LayoutComponent>
+)}

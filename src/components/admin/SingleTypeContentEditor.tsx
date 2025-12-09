@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import RichTextEditor from './RichTextEditor';
+import MediaPicker from './MediaPicker';
 
 interface SingleType {
   id: number;
@@ -33,6 +34,8 @@ export default function SingleTypeContentEditor({ singleType, onBack, onSaveSucc
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [currentImageField, setCurrentImageField] = useState<string | null>(null);
 
   useEffect(() => {
     setFormData(singleType.data || {});
@@ -156,8 +159,11 @@ export default function SingleTypeContentEditor({ singleType, onBack, onSaveSucc
                 type="button"
                 variant="outline"
                 size="icon"
-                disabled
-                title="Image upload coming soon"
+                onClick={() => {
+                  setCurrentImageField(field.key);
+                  setMediaPickerOpen(true);
+                }}
+                title="Select from media library"
                 className="h-11 w-11"
               >
                 <ImageIcon className="h-4 w-4" />
@@ -176,7 +182,7 @@ export default function SingleTypeContentEditor({ singleType, onBack, onSaveSucc
               </div>
             )}
             <p className="text-xs text-muted-foreground font-medium tracking-wide">
-              Enter an image URL or path
+              Enter an image URL or select from media library
             </p>
           </div>
         );
@@ -298,6 +304,18 @@ export default function SingleTypeContentEditor({ singleType, onBack, onSaveSucc
           </Button>
         </div>
       </form>
+
+      {/* Media Picker Dialog */}
+      <MediaPicker
+        open={mediaPickerOpen}
+        onOpenChange={setMediaPickerOpen}
+        onSelect={(url) => {
+          if (currentImageField) {
+            handleFieldChange(currentImageField, url);
+          }
+        }}
+        currentValue={currentImageField ? formData[currentImageField] : ''}
+      />
     </div>
   );
 }

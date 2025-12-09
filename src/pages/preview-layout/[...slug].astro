@@ -1,0 +1,92 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+// Get preview ID from query params
+const previewId = Astro.url.searchParams.get('id');
+
+let previewData = null;
+let pageData = {};
+let templateName = 'BaseLayout';
+
+if (previewId) {
+  try {
+    // Fetch preview data from API
+    const response = await fetch(`${Astro.url.origin}/api/preview?id=${previewId}`);
+    if (response.ok) {
+      previewData = await response.json();
+      pageData = previewData.data;
+      templateName = previewData.template || 'BaseLayout';
+    }
+  } catch (error) {
+    console.error('Failed to load preview:', error);
+  }
+}
+---
+
+{!previewData ? (
+  <html>
+    <head>
+      <title>Preview Not Found</title>
+    </head>
+    <body class="min-h-screen flex items-center justify-center bg-red-50">
+      <div class="text-center p-8">
+        <h1 class="text-2xl font-bold text-red-900 mb-2">Preview Not Found</h1>
+        <p class="text-red-700">The preview has expired or doesn't exist.</p>
+        <button onclick="window.close()" class="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg">
+          Close Window
+        </button>
+      </div>
+    </body>
+  </html>
+) : (
+  <BaseLayout title={pageData.title || 'Preview'}>
+  <!-- Preview Banner -->
+  <div class="sticky top-0 z-50 bg-amber-500 border-b-2 border-amber-600 shadow-lg">
+    <div class="container mx-auto px-4 py-2">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="bg-amber-600 text-white px-3 py-1 rounded-lg font-bold text-xs">
+            PREVIEW MODE
+          </div>
+          <p class="text-amber-950 font-medium text-xs hidden sm:block">
+            Using {previewData.template}
+          </p>
+        </div>
+        <button
+          onclick="window.close()"
+          class="px-3 py-1 bg-white text-amber-900 rounded-lg font-medium text-xs"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Render content based on layout -->
+  <div class="container mx-auto px-4 py-12">
+    {pageData.title && <h1 class="text-4xl font-bold mb-8">{pageData.title}</h1>}
+
+    {pageData.description && <p class="text-lg mb-6">{pageData.description}</p>}
+
+    {pageData.content && (
+      <div class="prose prose-lg max-w-none" set:html={pageData.content} />
+    )}
+
+    {pageData.image && (
+      <img src={pageData.image} alt={pageData.title || 'Preview'} class="rounded-lg shadow-lg max-w-full" />
+    )}
+
+    {pageData.cover && (
+      <img src={pageData.cover} alt={pageData.title || 'Preview'} class="rounded-lg shadow-lg max-w-full mb-6" />
+    )}
+
+    {pageData.author && (
+      <p class="text-sm text-muted-foreground mt-8">By {pageData.author}</p>
+    )}
+
+    {pageData.price && (
+      <p class="text-2xl font-bold text-primary mt-4">${pageData.price}</p>
+    )}
+  </div>
+  </BaseLayout>
+)}

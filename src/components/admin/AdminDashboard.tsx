@@ -12,6 +12,7 @@ import EntryEditor from './EntryEditor';
 import SingleTypesList from './SingleTypesList';
 import SingleTypeEditor from './SingleTypeEditor';
 import SingleTypeContentEditor from './SingleTypeContentEditor';
+import MediaLibrary from './MediaLibrary';
 
 interface Collection {
   id: number;
@@ -47,8 +48,8 @@ interface SingleType {
   updatedAt: Date;
 }
 
-type ViewType = 'dashboard' | 'collections' | 'collection-editor' | 'entries' | 'entry-editor' | 'single' | 'single-schema-editor' | 'single-content-editor';
-type Section = 'collections' | 'single';
+type ViewType = 'dashboard' | 'collections' | 'collection-editor' | 'entries' | 'entry-editor' | 'single' | 'single-schema-editor' | 'single-content-editor' | 'media';
+type Section = 'collections' | 'single' | 'media';
 
 export default function AdminDashboard() {
   // Collections states
@@ -363,6 +364,12 @@ export default function AdminDashboard() {
     updateURL('single', 'single');
   };
 
+  const handleNavigateToMedia = () => {
+    setActiveSection('media');
+    setView('media');
+    updateURL('media', 'media');
+  };
+
   const navigateToEntriesList = () => {
     if (!selectedCollection) return;
     setView('entries');
@@ -375,6 +382,11 @@ export default function AdminDashboard() {
     ];
 
     if (view === 'dashboard') {
+      return breadcrumbs;
+    }
+
+    if (activeSection === 'media') {
+      breadcrumbs.push({ label: 'Media Library' });
       return breadcrumbs;
     }
 
@@ -444,6 +456,7 @@ export default function AdminDashboard() {
         onCreateCollection={handleCreateCollection}
         onCreateSingle={handleCreateSingle}
         onNavigateToHome={handleNavigateToHome}
+        onNavigateToMedia={handleNavigateToMedia}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
@@ -532,6 +545,11 @@ export default function AdminDashboard() {
               onBack={handleBack}
               onSaveSuccess={handleSingleContentSaveSuccess}
             />
+          )}
+
+          {/* Media Library Section */}
+          {view === 'media' && (
+            <MediaLibrary />
           )}
         </div>
       </main>

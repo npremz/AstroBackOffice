@@ -45,3 +45,17 @@ export const contentModules = sqliteTable('content_modules', {
   data: text('data', { mode: 'json' }).notNull().$type<Record<string, any>>(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });
+
+// Media Library (Uploaded images and files)
+export const media = sqliteTable('media', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  filename: text('filename').notNull(),
+  originalName: text('original_name').notNull(),
+  url: text('url').notNull(),
+  mimeType: text('mime_type').notNull(),
+  size: integer('size').notNull(), // in bytes
+  width: integer('width'),
+  height: integer('height'),
+  alt: text('alt'),
+  uploadedAt: integer('uploaded_at', { mode: 'timestamp' }).notNull(),
+});
