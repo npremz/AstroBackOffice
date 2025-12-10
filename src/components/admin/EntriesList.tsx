@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, FileText, Edit, Trash2, ChevronLeft, ExternalLink, Loader2, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { apiDelete } from '@/lib/api-client';
+import EntriesSearch, { type SearchFilters } from './EntriesSearch';
 
 interface Collection {
   id: number;
@@ -48,16 +49,52 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<Entry | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [searchFilters, setSearchFilters] = useState<SearchFilters>({
+    q: '',
+    sortBy: 'publishedAt',
+    sortOrder: 'desc',
+  });
+  const [totalCount, setTotalCount] = useState(0);
+  const [availableTemplates, setAvailableTemplates] = useState<string[]>([]);
 
   useEffect(() => {
     fetchEntries();
-  }, [collection.id]);
+  }, [collection.id, searchFilters]);
 
   const fetchEntries = async () => {
     setLoading(true);
-    const response = await fetch(`/api/entries?collectionId=${collection.id}`);
+    
+    // Build search URL with filters
+    const params = new URLSearchParams();
+    params.set('collectionId', collection.id.toString());
+    
+    if (searchFilters.q) {
+      params.set('q', searchFilters.q);
+    }
+    if (searchFilters.sortBy) {
+      params.set('sortBy', searchFilters.sortBy);
+    }
+    if (searchFilters.sortOrder) {
+      params.set('sortOrder', searchFilters.sortOrder);
+    }
+    if (searchFilters.template) {
+      params.set('template', searchFilters.template);
+    }
+    if (searchFilters.publishedAfter) {
+      params.set('publishedAfter', searchFilters.publishedAfter);
+    }
+    if (searchFilters.publishedBefore) {
+      params.set('publishedBefore', searchFilters.publishedBefore);
+    }
+
+    const response = await fetch(`/api/entries/search?${params.toString()}`);
     const result = await response.json();
-    const data: Entry[] = result.data || result;
+    const data: Entry[] = result.data || [];
+    setTotalCount(result.pagination?.total || data.length);
+
+    // Extract unique templates for filter dropdown
+    const templates = [...new Set(data.map(e => e.template))].filter(Boolean);
+    setAvailableTemplates(templates);
 
     // Check for drafts for each entry
     const entriesWithDraftStatus = await Promise.all(
@@ -80,6 +117,10 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
     setEntries(entriesWithDraftStatus);
     setLoading(false);
   };
+
+  const handleSearch = useCallback((filters: SearchFilters) => {
+    setSearchFilters(filters);
+  }, []);
 
   const handleDeleteClick = (entry: Entry) => {
     setEntryToDelete(entry);
@@ -161,6 +202,16 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
           <Settings className="h-4 w-4 mr-2" />
           <span className="font-semibold">Edit Schema</span>
         </Button>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="stagger-fade-in stagger-2">
+        <EntriesSearch
+          onSearch={handleSearch}
+          templates={availableTemplates}
+          loading={loading}
+          resultCount={totalCount}
+        />
       </div>
 
       {/* Two column layout on desktop */}
