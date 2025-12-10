@@ -13,6 +13,7 @@ import SingleTypeContentEditor from './SingleTypeContentEditor';
 import MediaLibrary from './MediaLibrary';
 import Invitations from './Invitations';
 import Users from './Users';
+import AuditLogs from './AuditLogs';
 import { initCsrf } from '@/lib/api-client';
 
 interface Collection {
@@ -49,7 +50,7 @@ interface SingleType {
   updatedAt: Date;
 }
 
-type ViewType = 'dashboard' | 'collections' | 'collection-editor' | 'entries' | 'entry-editor' | 'single' | 'single-schema-editor' | 'single-content-editor' | 'media' | 'invitations' | 'users';
+type ViewType = 'dashboard' | 'collections' | 'collection-editor' | 'entries' | 'entry-editor' | 'single' | 'single-schema-editor' | 'single-content-editor' | 'media' | 'invitations' | 'users' | 'audit-logs';
 type Section = 'collections' | 'single' | 'media' | 'admin';
 
 interface User {
@@ -228,7 +229,7 @@ export default function AdminDashboard() {
   }, [collections, singleTypes, loadStateFromURL]);
 
   useEffect(() => {
-    if (authChecked && (view === 'invitations' || view === 'users') && user?.role !== 'super_admin') {
+    if (authChecked && (view === 'invitations' || view === 'users' || view === 'audit-logs') && user?.role !== 'super_admin') {
       setView('dashboard');
       setActiveSection('collections');
       updateURL('dashboard', 'collections');
@@ -396,7 +397,7 @@ export default function AdminDashboard() {
       setSelectedSingle(null);
       setEditingSingleSchema(null);
       updateURL('single', 'single');
-    } else if (view === 'invitations' || view === 'users') {
+    } else if (view === 'invitations' || view === 'users' || view === 'audit-logs') {
       setView('dashboard');
       setActiveSection('collections');
       updateURL('dashboard');
@@ -457,6 +458,12 @@ export default function AdminDashboard() {
     updateURL('users', 'admin');
   };
 
+  const handleNavigateToAuditLogs = () => {
+    setActiveSection('admin');
+    setView('audit-logs');
+    updateURL('audit-logs', 'admin');
+  };
+
   const navigateToEntriesList = () => {
     if (!selectedCollection) return;
     setView('entries');
@@ -479,6 +486,11 @@ export default function AdminDashboard() {
 
     if (view === 'users') {
       breadcrumbs.push({ label: 'Utilisateurs' });
+      return breadcrumbs;
+    }
+
+    if (view === 'audit-logs') {
+      breadcrumbs.push({ label: "Logs d'audit" });
       return breadcrumbs;
     }
 
@@ -564,9 +576,11 @@ export default function AdminDashboard() {
         onNavigateToMedia={handleNavigateToMedia}
         onNavigateToInvitations={handleNavigateToInvitations}
         onNavigateToUsers={handleNavigateToUsers}
+        onNavigateToAuditLogs={handleNavigateToAuditLogs}
         showInvitations={user?.role === 'super_admin'}
         isInvitationsView={view === 'invitations'}
         isUsersView={view === 'users'}
+        isAuditLogsView={view === 'audit-logs'}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
@@ -668,6 +682,10 @@ export default function AdminDashboard() {
 
           {view === 'users' && user?.role === 'super_admin' && (
             <Users currentUserId={user.id} />
+          )}
+
+          {view === 'audit-logs' && user?.role === 'super_admin' && (
+            <AuditLogs />
           )}
         </div>
       </main>

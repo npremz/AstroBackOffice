@@ -58,7 +58,8 @@ export default function MediaPicker({ open, onOpenChange, onSelect, currentValue
     try {
       const response = await fetch('/api/media');
       if (!response.ok) throw new Error('Failed to fetch');
-      const data = await response.json();
+      const result = await response.json();
+      const data = Array.isArray(result) ? result : result.data || [];
       setMedia(data);
       setFilteredMedia(data);
     } catch (error) {

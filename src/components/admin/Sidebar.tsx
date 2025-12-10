@@ -1,4 +1,4 @@
-import { Layers, Package, Plus, ChevronRight, Menu, X, Mail, Home, Image, Users, LogOut } from 'lucide-react';
+import { Layers, Package, Plus, ChevronRight, Menu, X, Mail, Home, Image, Users, LogOut, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -41,9 +41,11 @@ interface Props {
   onNavigateToMedia: () => void;
   onNavigateToInvitations?: () => void;
   onNavigateToUsers?: () => void;
+  onNavigateToAuditLogs?: () => void;
   showInvitations?: boolean;
   isInvitationsView?: boolean;
   isUsersView?: boolean;
+  isAuditLogsView?: boolean;
   isOpen: boolean;
   onToggle: () => void;
 }
@@ -62,9 +64,11 @@ export default function Sidebar({
   onNavigateToMedia,
   onNavigateToInvitations,
   onNavigateToUsers,
+  onNavigateToAuditLogs,
   showInvitations,
   isInvitationsView,
   isUsersView,
+  isAuditLogsView,
   isOpen,
   onToggle
 }: Props) {
@@ -318,6 +322,28 @@ export default function Sidebar({
                       <span>Invitations</span>
                     </button>
                   )}
+                  {onNavigateToAuditLogs && (
+                    <button
+                      onClick={() => {
+                        onNavigateToAuditLogs();
+                        if (window.innerWidth < 1024) onToggle();
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                        "hover:bg-accent/10 hover:text-primary",
+                        activeSection === 'admin' && isAuditLogsView
+                          ? "bg-primary/10 text-primary border-l-2 border-primary"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      <ChevronRight className={cn(
+                        "h-4 w-4 transition-transform duration-200",
+                        activeSection === 'admin' && isAuditLogsView && "rotate-90"
+                      )} />
+                      <History className="h-4 w-4" />
+                      <span>Logs d'audit</span>
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -353,7 +379,15 @@ export default function Sidebar({
               className="w-full justify-start text-muted-foreground hover:text-destructive"
               onClick={async () => {
                 try {
-                  await fetch('/api/auth/logout', { method: 'POST' });
+                  const csrfToken = document.cookie
+                    .split('; ')
+                    .find(row => row.startsWith('cms_csrf='))
+                    ?.split('=')[1];
+                  await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
+                  });
                   window.location.href = '/login';
                 } catch (err) {
                   console.error('Logout failed', err);

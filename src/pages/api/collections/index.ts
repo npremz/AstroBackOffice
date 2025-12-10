@@ -4,6 +4,8 @@ import { collections } from '../../../db/schema';
 import { sql } from 'drizzle-orm';
 import { createCollectionSchema, validateBody, validationError } from '@/lib/validation';
 import { parsePaginationParams, getOffset, paginatedResponse } from '@/lib/pagination';
+import { requireAuth } from '@/lib/auth';
+import { logAudit, createAuditContext } from '@/lib/audit';
 
 export const GET: APIRoute = async ({ url }) => {
   try {
@@ -30,7 +32,12 @@ export const GET: APIRoute = async ({ url }) => {
   }
 };
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
+  const auth = await requireAuth(cookies);
+  if ('response' in auth) return auth.response;
+
+  const auditContext = createAuditContext(auth.user, request);
+
   try {
     // Validate input
     const validation = await validateBody(request, createCollectionSchema);
@@ -45,12 +52,27 @@ export const POST: APIRoute = async ({ request }) => {
       schema
     }).returning();
 
+    await logAudit(auditContext, {
+      action: 'CREATE',
+      resourceType: 'Collection',
+      resourceId: newCollection.id,
+      resourceName: slug,
+      changes: { after: { slug, schema } },
+    });
+
     return new Response(JSON.stringify(newCollection), {
       status: 201,
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
     console.error('Create collection error:', error);
+    await logAudit(auditContext, {
+      action: 'CREATE',
+      resourceType: 'Collection',
+      resourceName: 'unknown',
+      status: 'FAILED',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    });
     return new Response(JSON.stringify({ error: 'Failed to create collection' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

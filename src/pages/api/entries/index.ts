@@ -4,6 +4,8 @@ import { entries, collections } from '../../../db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { createEntrySchema, validateBody, validationError, sanitizeEntryData } from '@/lib/validation';
 import { parsePaginationParams, getOffset, paginatedResponse } from '@/lib/pagination';
+import { requireAuth } from '@/lib/auth';
+import { logAudit, createAuditContext } from '@/lib/audit';
 
 // GET all entries or entries by collection (with pagination)
 export const GET: APIRoute = async ({ url }) => {
@@ -50,7 +52,12 @@ export const GET: APIRoute = async ({ url }) => {
 };
 
 // POST new entry
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
+  const auth = await requireAuth(cookies);
+  if ('response' in auth) return auth.response;
+
+  const auditContext = createAuditContext(auth.user, request);
+
   try {
     // Validate input
     const validation = await validateBody(request, createEntrySchema);
@@ -77,12 +84,27 @@ export const POST: APIRoute = async ({ request }) => {
       publishedAt: new Date()
     }).returning();
 
+    await logAudit(auditContext, {
+      action: 'CREATE',
+      resourceType: 'Entry',
+      resourceId: newEntry.id,
+      resourceName: slug,
+      changes: { after: { slug, template, data: sanitizedData, collectionId } },
+    });
+
     return new Response(JSON.stringify(newEntry), {
       status: 201,
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
     console.error('Create entry error:', error);
+    await logAudit(auditContext, {
+      action: 'CREATE',
+      resourceType: 'Entry',
+      resourceName: 'unknown',
+      status: 'FAILED',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    });
     return new Response(JSON.stringify({ error: 'Failed to create entry' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

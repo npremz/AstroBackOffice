@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/api-client';
 
 type Invitation = {
   id: number;
@@ -61,9 +62,8 @@ export default function Invitations() {
     setLatestToken(null);
 
     try {
-      const response = await fetch('/api/auth/invitations', {
+      const response = await apiFetch('/api/auth/invitations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, role }),
       });
 
@@ -113,7 +113,7 @@ export default function Invitations() {
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await fetch(`/api/auth/invitations/${id}`, {
+      const response = await apiFetch(`/api/auth/invitations/${id}`, {
         method: 'DELETE',
       });
 

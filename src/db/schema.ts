@@ -96,3 +96,23 @@ export const invitations = sqliteTable('invitations', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   revoked: integer('revoked', { mode: 'boolean' }).notNull().default(false),
 });
+
+// Audit Logs (tracks who modified what and when)
+export const auditLogs = sqliteTable('audit_logs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id),
+  userEmail: text('user_email').notNull(),
+  action: text('action').notNull(), // CREATE, UPDATE, DELETE, PUBLISH, LOGIN, LOGOUT
+  resourceType: text('resource_type').notNull(), // Entry, Collection, User, Media, ContentModule, Session
+  resourceId: integer('resource_id'),
+  resourceName: text('resource_name'), // slug, email, filename for readability
+  changes: text('changes', { mode: 'json' }).$type<{
+    before?: Record<string, any>;
+    after?: Record<string, any>;
+  }>(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  status: text('status').notNull().default('SUCCESS'), // SUCCESS, FAILED
+  errorMessage: text('error_message'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});

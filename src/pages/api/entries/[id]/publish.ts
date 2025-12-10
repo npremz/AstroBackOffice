@@ -3,11 +3,18 @@ import { db } from '@/db';
 import { entries, revisions, collections } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { updateEntrySchema, validateBody, validationError, sanitizeEntryData } from '@/lib/validation';
+import { requireAuth } from '@/lib/auth';
+import { logAudit, createAuditContext, computeChanges } from '@/lib/audit';
 
 // POST publish a draft to production
-export const POST: APIRoute = async ({ params, request }) => {
+export const POST: APIRoute = async ({ params, request, cookies }) => {
+  const auth = await requireAuth(cookies);
+  if ('response' in auth) return auth.response;
+
+  const auditContext = createAuditContext(auth.user, request);
+  const entryId = parseInt(params.id as string);
+
   try {
-    const entryId = parseInt(params.id as string);
     if (isNaN(entryId) || entryId < 1) {
       return validationError('Invalid entry ID');
     }
@@ -34,7 +41,7 @@ export const POST: APIRoute = async ({ params, request }) => {
     const [collection] = await db.select().from(collections).where(eq(collections.id, currentEntry.collectionId));
 
     // Sanitize data
-    const sanitizedData = data && collection 
+    const sanitizedData = data && collection
       ? sanitizeEntryData(data as Record<string, unknown>, collection.schema)
       : currentEntry.data;
 
@@ -66,12 +73,30 @@ export const POST: APIRoute = async ({ params, request }) => {
         eq(revisions.status, 'draft')
       ));
 
+    await logAudit(auditContext, {
+      action: 'PUBLISH',
+      resourceType: 'Entry',
+      resourceId: entryId,
+      resourceName: publishedEntry.slug,
+      changes: computeChanges(
+        { slug: currentEntry.slug, template: currentEntry.template, data: currentEntry.data },
+        { slug: publishedEntry.slug, template: publishedEntry.template, data: publishedEntry.data }
+      ),
+    });
+
     return new Response(JSON.stringify(publishedEntry), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
     console.error('Error publishing entry:', error);
+    await logAudit(auditContext, {
+      action: 'PUBLISH',
+      resourceType: 'Entry',
+      resourceId: entryId,
+      status: 'FAILED',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    });
     return new Response(JSON.stringify({ error: 'Failed to publish entry' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

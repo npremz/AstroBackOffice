@@ -7,6 +7,8 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { checkRateLimit, getClientId, rateLimitResponse, uploadRateLimit } from '@/lib/rate-limit';
 import { parsePaginationParams, getOffset, paginatedResponse } from '@/lib/pagination';
+import { requireAuth } from '@/lib/auth';
+import { logAudit, createAuditContext } from '@/lib/audit';
 
 // Allowed MIME types
 const ALLOWED_MIME_TYPES = [
@@ -77,7 +79,12 @@ export const GET: APIRoute = async ({ url }) => {
 };
 
 // POST /api/media - Upload new media
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
+  const auth = await requireAuth(cookies);
+  if ('response' in auth) return auth.response;
+
+  const auditContext = createAuditContext(auth.user, request);
+
   try {
     // Rate limiting
     const clientId = getClientId(request);
@@ -166,12 +173,26 @@ export const POST: APIRoute = async ({ request }) => {
       uploadedAt: new Date()
     }).returning();
 
+    await logAudit(auditContext, {
+      action: 'CREATE',
+      resourceType: 'Media',
+      resourceId: newMedia.id,
+      resourceName: sanitizedOriginal,
+      changes: { after: { filename, originalName: sanitizedOriginal, mimeType: file.type, size: file.size } },
+    });
+
     return new Response(JSON.stringify(newMedia), {
       status: 201,
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
     console.error('Error uploading media:', error);
+    await logAudit(auditContext, {
+      action: 'CREATE',
+      resourceType: 'Media',
+      status: 'FAILED',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    });
     return new Response(JSON.stringify({ error: 'Failed to upload media' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

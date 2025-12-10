@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { invitations, users } from '@/db/schema';
 import { requireAuth, createInvitation, normalizeEmail, ensureRole } from '@/lib/auth';
+import { logAudit, createAuditContext } from '@/lib/audit';
 
 const sanitizeInvitation = (invite: typeof invitations.$inferSelect) => {
   const { tokenHash, ...rest } = invite;
@@ -69,6 +70,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const auth = await requireAuth(cookies, ['super_admin']);
   if ('response' in auth) return auth.response;
 
+  const auditContext = createAuditContext(auth.user, request);
+
   try {
     const { email, role } = await request.json();
     if (!email || !role) {
@@ -101,12 +104,26 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     await sendInvitationEmail(normalizedEmail, token, request.url);
 
+    await logAudit(auditContext, {
+      action: 'INVITE',
+      resourceType: 'Invitation',
+      resourceId: invitation.id,
+      resourceName: normalizedEmail,
+      changes: { after: { email: normalizedEmail, role } },
+    });
+
     return new Response(JSON.stringify({ invitation: sanitizeInvitation(invitation), token }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
     console.error('Create invitation error:', error);
+    await logAudit(auditContext, {
+      action: 'INVITE',
+      resourceType: 'Invitation',
+      status: 'FAILED',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    });
     return new Response(JSON.stringify({ error: 'Failed to create invitation' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
