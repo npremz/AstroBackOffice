@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
+import { apiUpload } from '@/lib/api-client';
 
 interface MediaItem {
   id: number;
@@ -80,13 +81,7 @@ export default function MediaPicker({ open, onOpenChange, onSelect, currentValue
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/api/media', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) throw new Error(`Failed to upload ${file.name}`);
-      const newMedia = await response.json();
+      const newMedia = await apiUpload<MediaItem>('/api/media', formData);
 
       toast.success('Image uploaded successfully');
       await fetchMedia();

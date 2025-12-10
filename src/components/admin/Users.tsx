@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { apiFetch, apiDelete } from '@/lib/api-client';
 
 type User = {
   id: number;
@@ -72,9 +73,8 @@ export default function Users({ currentUserId }: Props) {
 
     setSaving(true);
     try {
-      const response = await fetch(`/api/auth/users/${editingUser.id}`, {
+      const response = await apiFetch(`/api/auth/users/${editingUser.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: editName || null,
           role: editRole,
@@ -102,16 +102,7 @@ export default function Users({ currentUserId }: Props) {
 
   const handleDelete = async (user: User) => {
     try {
-      const response = await fetch(`/api/auth/users/${user.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        toast.error(data?.error || "Impossible de supprimer l'utilisateur");
-        return;
-      }
-
+      await apiDelete(`/api/auth/users/${user.id}`);
       setUsers((prev) => prev.filter((u) => u.id !== user.id));
       toast.success('Utilisateur supprimé');
     } catch (err) {

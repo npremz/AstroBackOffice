@@ -66,18 +66,33 @@ export const loginSchema = z.object({
 
 // Sanitize HTML content (for richtext fields)
 export function sanitizeHtml(dirty: string): string {
-  return DOMPurify.sanitize(dirty, {
+  // Configure DOMPurify to block data: URIs in src attributes
+  DOMPurify.addHook('uponSanitizeAttribute', (node, data) => {
+    if (data.attrName === 'src' && data.attrValue?.startsWith('data:')) {
+      // Only allow safe data: URIs (images)
+      if (!data.attrValue.match(/^data:image\/(png|gif|jpeg|webp);base64,/i)) {
+        data.attrValue = '';
+      }
+    }
+  });
+  
+  const result = DOMPurify.sanitize(dirty, {
     ALLOWED_TAGS: [
       'p', 'br', 'strong', 'em', 'u', 's', 'a', 'ul', 'ol', 'li',
       'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre',
       'img', 'span', 'div'
     ],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'style'],
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class'],
     ALLOW_DATA_ATTR: false,
     ADD_ATTR: ['target'],
     FORBID_TAGS: ['script', 'style', 'iframe', 'form', 'input', 'object', 'embed'],
-    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
+    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'style'],
   });
+  
+  // Remove hook to avoid interference with subsequent calls
+  DOMPurify.removeHook('uponSanitizeAttribute');
+  
+  return result;
 }
 
 // Sanitize entry data based on collection schema
@@ -91,7 +106,7 @@ export function sanitizeEntryData(
     const value = data[field.key];
     
     if (value === undefined || value === null) {
-      sanitized[field.key] = '';
+      sanitized[field.key] = field.type === 'number' ? 0 : '';
       continue;
     }
     
@@ -106,7 +121,8 @@ export function sanitizeEntryData(
         sanitized[field.key] = typeof value === 'string' ? value.slice(0, 10000) : '';
         break;
       case 'number':
-        sanitized[field.key] = typeof value === 'number' ? value : parseFloat(String(value)) || 0;
+        const num = typeof value === 'number' ? value : parseFloat(String(value));
+        sanitized[field.key] = Number.isNaN(num) ? 0 : num;
         break;
       default:
         sanitized[field.key] = typeof value === 'string' ? value.slice(0, 10000) : '';

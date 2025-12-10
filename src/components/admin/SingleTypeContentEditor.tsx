@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import RichTextEditor from './RichTextEditor';
 import MediaPicker from './MediaPicker';
+import { apiPut } from '@/lib/api-client';
 
 interface SingleType {
   id: number;
@@ -67,13 +68,7 @@ export default function SingleTypeContentEditor({ singleType, onBack, onSaveSucc
         data: formData
       };
 
-      const response = await fetch(`/api/content-modules/${singleType.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) throw new Error('Failed to save');
+      await apiPut(`/api/content-modules/${singleType.id}`, payload);
 
       toast.success('Content updated successfully!', {
         description: `The content for "${singleType.name}" has been saved.`,

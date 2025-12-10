@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { apiPut, apiPost } from '@/lib/api-client';
 
 interface FieldSchema {
   label: string;
@@ -132,19 +133,11 @@ export default function SingleTypeEditor({ singleType, onBack, onSaveSuccess }: 
         data: singleType?.data || initialData
       };
 
-      const response = singleType
-        ? await fetch(`/api/content-modules/${singleType.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          })
-        : await fetch('/api/content-modules', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-      if (!response.ok) throw new Error('Failed to save');
+      if (singleType) {
+        await apiPut(`/api/content-modules/${singleType.id}`, payload);
+      } else {
+        await apiPost('/api/content-modules', payload);
+      }
 
       toast.success(
         singleType ? 'Single type updated successfully!' : 'Single type created successfully!',
