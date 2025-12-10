@@ -30,7 +30,7 @@ interface SingleType {
 interface Props {
   collections: Collection[];
   singleTypes: SingleType[];
-  activeSection: 'collections' | 'single' | 'media';
+  activeSection: 'collections' | 'single' | 'media' | 'admin';
   selectedCollectionId?: number;
   selectedSingleId?: number;
   onSelectCollection: (collection: Collection) => void;
@@ -39,6 +39,9 @@ interface Props {
   onCreateSingle: () => void;
   onNavigateToHome: () => void;
   onNavigateToMedia: () => void;
+  onNavigateToInvitations?: () => void;
+  showInvitations?: boolean;
+  isInvitationsView?: boolean;
   isOpen: boolean;
   onToggle: () => void;
 }
@@ -55,6 +58,9 @@ export default function Sidebar({
   onCreateSingle,
   onNavigateToHome,
   onNavigateToMedia,
+  onNavigateToInvitations,
+  showInvitations,
+  isInvitationsView,
   isOpen,
   onToggle
 }: Props) {
@@ -251,6 +257,41 @@ export default function Sidebar({
                 </button>
               </div>
             </div>
+
+            {showInvitations && onNavigateToInvitations && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-primary" />
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                      Administration
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <button
+                    onClick={() => {
+                      onNavigateToInvitations();
+                      if (window.innerWidth < 1024) onToggle();
+                    }}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                      "hover:bg-accent/10 hover:text-primary",
+                      activeSection === 'admin' && isInvitationsView
+                        ? "bg-primary/10 text-primary border-l-2 border-primary"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    <ChevronRight className={cn(
+                      "h-4 w-4 transition-transform duration-200",
+                      activeSection === 'admin' && isInvitationsView && "rotate-90"
+                    )} />
+                    <span>Invitations</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </nav>
 
           {/* Footer */}

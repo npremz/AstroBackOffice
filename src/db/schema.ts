@@ -59,3 +59,40 @@ export const media = sqliteTable('media', {
   alt: text('alt'),
   uploadedAt: integer('uploaded_at', { mode: 'timestamp' }).notNull(),
 });
+
+// Users (Admin accounts)
+export const users = sqliteTable('users', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  name: text('name'),
+  role: text('role').notNull().default('editor'),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  lastLoginAt: integer('last_login_at', { mode: 'timestamp' }),
+});
+
+// Sessions (login tokens)
+export const sessions = sqliteTable('sessions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull().references(() => users.id),
+  tokenHash: text('token_hash').notNull().unique(),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  userAgent: text('user_agent'),
+  ip: text('ip'),
+});
+
+// Invitations
+export const invitations = sqliteTable('invitations', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull(),
+  role: text('role').notNull(),
+  tokenHash: text('token_hash').notNull().unique(),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  invitedBy: integer('invited_by').references(() => users.id),
+  acceptedAt: integer('accepted_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  revoked: integer('revoked', { mode: 'boolean' }).notNull().default(false),
+});

@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LoginForm from '../components/auth/LoginForm';
+import { getSession } from '@/lib/auth';
+
+const session = await getSession(Astro.cookies);
+if (session) {
+  return Astro.redirect('/admin');
+}
+---
+
+<BaseLayout title="Connexion">
+  <LoginForm client:only="react" />
+</BaseLayout>

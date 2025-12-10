@@ -1,6 +1,12 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AdminDashboard from '../../components/admin/AdminDashboard';
+import { getSession } from '@/lib/auth';
+
+const session = await getSession(Astro.cookies);
+if (!session) {
+  return Astro.redirect('/login');
+}
 ---
 
 <BaseLayout title="CMS Admin">

@@ -1,6 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 import Sidebar from './Sidebar';
 import Breadcrumbs, { type BreadcrumbItem } from './Breadcrumbs';
@@ -13,6 +11,7 @@ import SingleTypesList from './SingleTypesList';
 import SingleTypeEditor from './SingleTypeEditor';
 import SingleTypeContentEditor from './SingleTypeContentEditor';
 import MediaLibrary from './MediaLibrary';
+import Invitations from './Invitations';
 
 interface Collection {
   id: number;
@@ -48,8 +47,15 @@ interface SingleType {
   updatedAt: Date;
 }
 
-type ViewType = 'dashboard' | 'collections' | 'collection-editor' | 'entries' | 'entry-editor' | 'single' | 'single-schema-editor' | 'single-content-editor' | 'media';
-type Section = 'collections' | 'single' | 'media';
+type ViewType = 'dashboard' | 'collections' | 'collection-editor' | 'entries' | 'entry-editor' | 'single' | 'single-schema-editor' | 'single-content-editor' | 'media' | 'invitations';
+type Section = 'collections' | 'single' | 'media' | 'admin';
+
+interface User {
+  id: number;
+  email: string;
+  role: string;
+  name?: string | null;
+}
 
 export default function AdminDashboard() {
   // Collections states
@@ -67,6 +73,8 @@ export default function AdminDashboard() {
   const [view, setView] = useState<ViewType>('dashboard');
   const [activeSection, setActiveSection] = useState<Section>('collections');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   const fetchCollections = async () => {
     const response = await fetch('/api/collections');
@@ -94,8 +102,12 @@ export default function AdminDashboard() {
       setActiveSection(section);
     } else if (urlView) {
       // Infer section from view
-      if (urlView.includes('single')) {
+      if (urlView === 'invitations') {
+        setActiveSection('admin');
+      } else if (urlView.includes('single')) {
         setActiveSection('single');
+      } else if (urlView === 'media') {
+        setActiveSection('media');
       } else {
         setActiveSection('collections');
       }
@@ -107,6 +119,10 @@ export default function AdminDashboard() {
       // Default views based on section
       if (section === 'single') {
         setView('single');
+      } else if (section === 'media') {
+        setView('media');
+      } else if (section === 'admin') {
+        setView('invitations');
       } else {
         setView('collections');
       }
@@ -159,10 +175,41 @@ export default function AdminDashboard() {
     }
   }, [collections, singleTypes]);
 
-  // Initialize from URL on mount
+  // Initialize auth + data loading
   useEffect(() => {
-    fetchCollections();
-    fetchSingleTypes();
+    const originalFetch = window.fetch;
+
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const response = await originalFetch(input, { credentials: init?.credentials ?? 'include', ...init });
+      if (response.status === 401) {
+        window.location.href = '/login';
+        throw new Error('Unauthorized');
+      }
+      return response;
+    };
+
+    const load = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (!response.ok) {
+          throw new Error('Auth check failed');
+        }
+        const data = await response.json();
+        setUser(data);
+        await Promise.all([fetchCollections(), fetchSingleTypes()]);
+      } catch (error) {
+        console.error('Failed to verify session', error);
+        window.location.href = '/login';
+      } finally {
+        setAuthChecked(true);
+      }
+    };
+
+    load();
+
+    return () => {
+      window.fetch = originalFetch;
+    };
   }, []);
 
   // Load state from URL when collections or single types change
@@ -171,6 +218,14 @@ export default function AdminDashboard() {
       loadStateFromURL();
     }
   }, [collections, singleTypes, loadStateFromURL]);
+
+  useEffect(() => {
+    if (authChecked && view === 'invitations' && user?.role !== 'super_admin') {
+      setView('dashboard');
+      setActiveSection('collections');
+      updateURL('dashboard', 'collections');
+    }
+  }, [authChecked, view, user]);
 
   // Handle browser back/forward buttons
   useEffect(() => {
@@ -201,7 +256,9 @@ export default function AdminDashboard() {
     // Set view for non-default views
     const defaultViews: Record<Section, ViewType> = {
       collections: 'collections',
-      single: 'single'
+      single: 'single',
+      media: 'media',
+      admin: 'invitations'
     };
 
     if (newView !== defaultViews[currentSection]) {
@@ -331,6 +388,10 @@ export default function AdminDashboard() {
       setSelectedSingle(null);
       setEditingSingleSchema(null);
       updateURL('single', 'single');
+    } else if (view === 'invitations') {
+      setView('dashboard');
+      setActiveSection('collections');
+      updateURL('dashboard');
     }
   };
 
@@ -343,6 +404,12 @@ export default function AdminDashboard() {
     } else if (section === 'single') {
       setView('single');
       updateURL('single', 'single');
+    } else if (section === 'media') {
+      setView('media');
+      updateURL('media', 'media');
+    } else if (section === 'admin') {
+      setView('invitations');
+      updateURL('invitations', 'admin');
     }
   };
 
@@ -370,6 +437,12 @@ export default function AdminDashboard() {
     updateURL('media', 'media');
   };
 
+  const handleNavigateToInvitations = () => {
+    setActiveSection('admin');
+    setView('invitations');
+    updateURL('invitations', 'admin');
+  };
+
   const navigateToEntriesList = () => {
     if (!selectedCollection) return;
     setView('entries');
@@ -382,6 +455,11 @@ export default function AdminDashboard() {
     ];
 
     if (view === 'dashboard') {
+      return breadcrumbs;
+    }
+
+    if (view === 'invitations') {
+      breadcrumbs.push({ label: 'Invitations' });
       return breadcrumbs;
     }
 
@@ -442,6 +520,14 @@ export default function AdminDashboard() {
     return breadcrumbs;
   };
 
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-muted-foreground">Chargement de la session...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background grain-overlay flex">
       {/* Sidebar */}
@@ -457,6 +543,9 @@ export default function AdminDashboard() {
         onCreateSingle={handleCreateSingle}
         onNavigateToHome={handleNavigateToHome}
         onNavigateToMedia={handleNavigateToMedia}
+        onNavigateToInvitations={handleNavigateToInvitations}
+        showInvitations={user?.role === 'super_admin'}
+        isInvitationsView={view === 'invitations'}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
@@ -550,6 +639,10 @@ export default function AdminDashboard() {
           {/* Media Library Section */}
           {view === 'media' && (
             <MediaLibrary />
+          )}
+
+          {view === 'invitations' && user?.role === 'super_admin' && (
+            <Invitations />
           )}
         </div>
       </main>

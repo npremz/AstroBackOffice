@@ -1,6 +1,8 @@
+import 'dotenv/config';
 import { db } from './index';
-import { collections, entries, revisions, contentModules, media } from './schema';
-import { sql } from 'drizzle-orm';
+import { collections, entries, revisions, contentModules, media, invitations } from './schema';
+import { eq, sql } from 'drizzle-orm';
+import { createInvitation, normalizeEmail } from '@/lib/auth';
 
 async function seed() {
   console.log('Seeding database...');
@@ -8,6 +10,9 @@ async function seed() {
   // Clear existing tables (in correct order for foreign key constraints)
   console.log('Clearing existing data...');
   await db.run(sql`PRAGMA foreign_keys = OFF`);
+  await db.run(sql`DELETE FROM sessions`);
+  await db.run(sql`DELETE FROM invitations`);
+  await db.run(sql`DELETE FROM users`);
   await db.run(sql`DELETE FROM revisions`);
   await db.run(sql`DELETE FROM entries`);
   await db.run(sql`DELETE FROM collections`);
@@ -104,6 +109,19 @@ async function seed() {
   ]);
 
   console.log('Content modules created');
+
+  const seedEmail = process.env.ADMIN_SEED_EMAIL;
+  if (seedEmail) {
+    const normalizedEmail = normalizeEmail(seedEmail);
+    await db.delete(invitations).where(eq(invitations.email, normalizedEmail));
+    const { token, invitation } = await createInvitation(normalizedEmail, 'super_admin');
+    console.log(`Admin invitation created for ${normalizedEmail}`);
+    console.log(`Use this token to accept the invitation: ${token}`);
+    console.log(`Invitation expires at: ${new Date(invitation.expiresAt).toISOString()}`);
+  } else {
+    console.warn('ADMIN_SEED_EMAIL not set; no admin invitation created.');
+  }
+
   console.log('Database seeded successfully!');
 }
 
