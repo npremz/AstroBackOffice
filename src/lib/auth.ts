@@ -1,6 +1,6 @@
 import type { AstroCookies } from 'astro';
 import { randomBytes, scryptSync, timingSafeEqual, createHmac } from 'crypto';
-import { and, eq, gt } from 'drizzle-orm';
+import { and, eq, gt, lt } from 'drizzle-orm';
 import { db } from '@/db';
 import { users, sessions, invitations } from '@/db/schema';
 
@@ -83,6 +83,9 @@ export async function getSession(cookies: AstroCookies) {
   if (!result?.user || !result.session || !result.user.isActive) {
     return null;
   }
+
+  // Trigger probabilistic cleanup (non-blocking)
+  maybeCleanup().catch(() => {});
 
   return {
     token: raw,
@@ -167,3 +170,45 @@ export function publicUser(user: typeof users.$inferSelect) {
 
 export { ALLOWED_ROLES };
 export const SESSION_COOKIE_NAME = SESSION_COOKIE;
+
+// Cleanup functions
+export async function cleanupExpiredSessions() {
+  const result = await db.delete(sessions).where(lt(sessions.expiresAt, new Date())).returning({ id: sessions.id });
+  return result.length;
+}
+
+export async function cleanupExpiredInvitations() {
+  // Delete invitations that are expired AND (not accepted OR revoked)
+  const result = await db.delete(invitations).where(
+    and(
+      lt(invitations.expiresAt, new Date()),
+      eq(invitations.acceptedAt, null)
+    )
+  ).returning({ id: invitations.id });
+  return result.length;
+}
+
+export async function cleanupAll() {
+  const [sessionsDeleted, invitationsDeleted] = await Promise.all([
+    cleanupExpiredSessions(),
+    cleanupExpiredInvitations(),
+  ]);
+  return { sessionsDeleted, invitationsDeleted };
+}
+
+// Probabilistic cleanup - runs cleanup ~1% of the time
+let lastCleanup = 0;
+const CLEANUP_INTERVAL_MS = 1000 * 60 * 60; // Max once per hour
+
+export async function maybeCleanup() {
+  const now = Date.now();
+  if (now - lastCleanup < CLEANUP_INTERVAL_MS) return;
+  if (Math.random() > 0.01) return; // 1% chance
+
+  lastCleanup = now;
+  try {
+    await cleanupAll();
+  } catch (err) {
+    console.error('Cleanup error:', err);
+  }
+}
