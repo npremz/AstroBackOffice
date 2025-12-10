@@ -3,18 +3,25 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { users } from '@/db/schema';
 import { verifyPassword, normalizeEmail, createSession, setSessionCookie, publicUser } from '@/lib/auth';
+import { loginSchema, validateBody, validationError } from '@/lib/validation';
+import { checkRateLimit, getClientId, rateLimitResponse, loginRateLimit } from '@/lib/rate-limit';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    const { email, password } = await request.json();
-
-    if (!email || !password) {
-      return new Response(JSON.stringify({ error: 'Email and password are required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Rate limiting
+    const clientId = getClientId(request);
+    const rateCheck = checkRateLimit(`login:${clientId}`, loginRateLimit);
+    if (!rateCheck.allowed) {
+      return rateLimitResponse(rateCheck.resetAt);
     }
 
+    // Validate input
+    const validation = await validateBody(request, loginSchema);
+    if (!validation.success) {
+      return validationError(validation.error);
+    }
+
+    const { email, password } = validation.data;
     const normalizedEmail = normalizeEmail(email);
     const [user] = await db.select().from(users).where(eq(users.email, normalizedEmail));
 

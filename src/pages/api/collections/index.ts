@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { db } from '../../../db';
 import { collections } from '../../../db/schema';
+import { createCollectionSchema, validateBody, validationError } from '@/lib/validation';
 
 export const GET: APIRoute = async () => {
   try {
@@ -19,8 +20,13 @@ export const GET: APIRoute = async () => {
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const body = await request.json();
-    const { slug, schema } = body;
+    // Validate input
+    const validation = await validateBody(request, createCollectionSchema);
+    if (!validation.success) {
+      return validationError(validation.error);
+    }
+
+    const { slug, schema } = validation.data;
 
     const [newCollection] = await db.insert(collections).values({
       slug,
@@ -32,6 +38,7 @@ export const POST: APIRoute = async ({ request }) => {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
+    console.error('Create collection error:', error);
     return new Response(JSON.stringify({ error: 'Failed to create collection' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

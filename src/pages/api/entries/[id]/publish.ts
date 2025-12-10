@@ -1,14 +1,24 @@
 import type { APIRoute } from 'astro';
 import { db } from '@/db';
-import { entries, revisions } from '@/db/schema';
+import { entries, revisions, collections } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { updateEntrySchema, validateBody, validationError, sanitizeEntryData } from '@/lib/validation';
 
 // POST publish a draft to production
 export const POST: APIRoute = async ({ params, request }) => {
   try {
     const entryId = parseInt(params.id as string);
-    const body = await request.json();
-    const { data, slug, template } = body;
+    if (isNaN(entryId) || entryId < 1) {
+      return validationError('Invalid entry ID');
+    }
+
+    // Validate input
+    const validation = await validateBody(request, updateEntrySchema);
+    if (!validation.success) {
+      return validationError(validation.error);
+    }
+
+    const { data, slug, template } = validation.data;
 
     // Get the current entry
     const [currentEntry] = await db.select().from(entries).where(eq(entries.id, entryId));
@@ -19,6 +29,14 @@ export const POST: APIRoute = async ({ params, request }) => {
         headers: { 'Content-Type': 'application/json' }
       });
     }
+
+    // Get collection schema for sanitization
+    const [collection] = await db.select().from(collections).where(eq(collections.id, currentEntry.collectionId));
+
+    // Sanitize data
+    const sanitizedData = data && collection 
+      ? sanitizeEntryData(data as Record<string, unknown>, collection.schema)
+      : currentEntry.data;
 
     // Archive current version if it's already published (not epoch time)
     if (currentEntry.publishedAt.getTime() > 0) {
@@ -33,9 +51,9 @@ export const POST: APIRoute = async ({ params, request }) => {
     // Update entry with new data and publish
     const [publishedEntry] = await db.update(entries)
       .set({
-        data,
-        slug,
-        template,
+        data: sanitizedData,
+        slug: slug ?? currentEntry.slug,
+        template: template ?? currentEntry.template,
         publishedAt: new Date()
       })
       .where(eq(entries.id, entryId))

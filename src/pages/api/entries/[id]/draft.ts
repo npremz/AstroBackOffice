@@ -1,12 +1,16 @@
 import type { APIRoute } from 'astro';
 import { db } from '@/db';
-import { entries, revisions } from '@/db/schema';
+import { entries, revisions, collections } from '@/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
+import { updateEntrySchema, validateBody, validationError, sanitizeEntryData } from '@/lib/validation';
 
 // GET the latest draft for an entry
 export const GET: APIRoute = async ({ params }) => {
   try {
     const entryId = parseInt(params.id as string);
+    if (isNaN(entryId) || entryId < 1) {
+      return validationError('Invalid entry ID');
+    }
 
     // Get the latest draft for this entry
     const [draft] = await db
@@ -42,8 +46,17 @@ export const GET: APIRoute = async ({ params }) => {
 export const POST: APIRoute = async ({ params, request }) => {
   try {
     const entryId = parseInt(params.id as string);
-    const body = await request.json();
-    const { data, slug, template } = body;
+    if (isNaN(entryId) || entryId < 1) {
+      return validationError('Invalid entry ID');
+    }
+
+    // Validate input
+    const validation = await validateBody(request, updateEntrySchema);
+    if (!validation.success) {
+      return validationError(validation.error);
+    }
+
+    const { data, slug, template } = validation.data;
 
     // Check if entry exists
     const [entry] = await db.select().from(entries).where(eq(entries.id, entryId));
@@ -54,12 +67,20 @@ export const POST: APIRoute = async ({ params, request }) => {
       });
     }
 
+    // Get collection schema for sanitization
+    const [collection] = await db.select().from(collections).where(eq(collections.id, entry.collectionId));
+
+    // Sanitize data if provided
+    const sanitizedData = data && collection 
+      ? sanitizeEntryData(data as Record<string, unknown>, collection.schema)
+      : entry.data;
+
     // Update entry with new data, slug, and template (but keep as draft)
     await db.update(entries)
       .set({
-        data,
-        slug,
-        template,
+        data: sanitizedData,
+        slug: slug ?? entry.slug,
+        template: template ?? entry.template,
         // Keep publishedAt as epoch to indicate it's still a draft
         publishedAt: new Date(0)
       })
@@ -82,7 +103,7 @@ export const POST: APIRoute = async ({ params, request }) => {
       [draft] = await db
         .update(revisions)
         .set({
-          data,
+          data: sanitizedData,
           createdAt: new Date()
         })
         .where(eq(revisions.id, existingDraft.id))
@@ -91,7 +112,7 @@ export const POST: APIRoute = async ({ params, request }) => {
       // Create new draft
       [draft] = await db.insert(revisions).values({
         entryId,
-        data,
+        data: sanitizedData,
         createdAt: new Date(),
         status: 'draft'
       }).returning();
