@@ -1,8 +1,56 @@
 import type { APIRoute } from 'astro';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
-import { users } from '@/db/schema';
+import { users, sessions } from '@/db/schema';
 import { ensureRole, publicUser, requireAuth } from '@/lib/auth';
+
+const jsonHeaders = { 'Content-Type': 'application/json' };
+
+export const DELETE: APIRoute = async ({ params, cookies }) => {
+  const auth = await requireAuth(cookies, ['super_admin']);
+  if ('response' in auth) return auth.response;
+
+  const id = parseInt(params.id || '', 10);
+  if (!id) {
+    return new Response(JSON.stringify({ error: 'Invalid user id' }), {
+      status: 400,
+      headers: jsonHeaders
+    });
+  }
+
+  // Prevent self-deletion
+  if (id === auth.user.id) {
+    return new Response(JSON.stringify({ error: 'Cannot delete your own account' }), {
+      status: 400,
+      headers: jsonHeaders
+    });
+  }
+
+  try {
+    // Delete user sessions first
+    await db.delete(sessions).where(eq(sessions.userId, id));
+
+    const [deleted] = await db.delete(users).where(eq(users.id, id)).returning();
+
+    if (!deleted) {
+      return new Response(JSON.stringify({ error: 'User not found' }), {
+        status: 404,
+        headers: jsonHeaders
+      });
+    }
+
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: jsonHeaders
+    });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    return new Response(JSON.stringify({ error: 'Failed to delete user' }), {
+      status: 500,
+      headers: jsonHeaders
+    });
+  }
+};
 
 export const PATCH: APIRoute = async ({ params, request, cookies }) => {
   const auth = await requireAuth(cookies, ['super_admin']);

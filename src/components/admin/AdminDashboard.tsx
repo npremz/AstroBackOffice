@@ -12,6 +12,7 @@ import SingleTypeEditor from './SingleTypeEditor';
 import SingleTypeContentEditor from './SingleTypeContentEditor';
 import MediaLibrary from './MediaLibrary';
 import Invitations from './Invitations';
+import Users from './Users';
 
 interface Collection {
   id: number;
@@ -47,7 +48,7 @@ interface SingleType {
   updatedAt: Date;
 }
 
-type ViewType = 'dashboard' | 'collections' | 'collection-editor' | 'entries' | 'entry-editor' | 'single' | 'single-schema-editor' | 'single-content-editor' | 'media' | 'invitations';
+type ViewType = 'dashboard' | 'collections' | 'collection-editor' | 'entries' | 'entry-editor' | 'single' | 'single-schema-editor' | 'single-content-editor' | 'media' | 'invitations' | 'users';
 type Section = 'collections' | 'single' | 'media' | 'admin';
 
 interface User {
@@ -220,7 +221,7 @@ export default function AdminDashboard() {
   }, [collections, singleTypes, loadStateFromURL]);
 
   useEffect(() => {
-    if (authChecked && view === 'invitations' && user?.role !== 'super_admin') {
+    if (authChecked && (view === 'invitations' || view === 'users') && user?.role !== 'super_admin') {
       setView('dashboard');
       setActiveSection('collections');
       updateURL('dashboard', 'collections');
@@ -388,7 +389,7 @@ export default function AdminDashboard() {
       setSelectedSingle(null);
       setEditingSingleSchema(null);
       updateURL('single', 'single');
-    } else if (view === 'invitations') {
+    } else if (view === 'invitations' || view === 'users') {
       setView('dashboard');
       setActiveSection('collections');
       updateURL('dashboard');
@@ -443,6 +444,12 @@ export default function AdminDashboard() {
     updateURL('invitations', 'admin');
   };
 
+  const handleNavigateToUsers = () => {
+    setActiveSection('admin');
+    setView('users');
+    updateURL('users', 'admin');
+  };
+
   const navigateToEntriesList = () => {
     if (!selectedCollection) return;
     setView('entries');
@@ -460,6 +467,11 @@ export default function AdminDashboard() {
 
     if (view === 'invitations') {
       breadcrumbs.push({ label: 'Invitations' });
+      return breadcrumbs;
+    }
+
+    if (view === 'users') {
+      breadcrumbs.push({ label: 'Utilisateurs' });
       return breadcrumbs;
     }
 
@@ -544,8 +556,10 @@ export default function AdminDashboard() {
         onNavigateToHome={handleNavigateToHome}
         onNavigateToMedia={handleNavigateToMedia}
         onNavigateToInvitations={handleNavigateToInvitations}
+        onNavigateToUsers={handleNavigateToUsers}
         showInvitations={user?.role === 'super_admin'}
         isInvitationsView={view === 'invitations'}
+        isUsersView={view === 'users'}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
@@ -643,6 +657,10 @@ export default function AdminDashboard() {
 
           {view === 'invitations' && user?.role === 'super_admin' && (
             <Invitations />
+          )}
+
+          {view === 'users' && user?.role === 'super_admin' && (
+            <Users currentUserId={user.id} />
           )}
         </div>
       </main>

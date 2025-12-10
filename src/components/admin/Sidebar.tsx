@@ -1,4 +1,4 @@
-import { Layers, Package, Plus, ChevronRight, Menu, X, Mail, Home, Image } from 'lucide-react';
+import { Layers, Package, Plus, ChevronRight, Menu, X, Mail, Home, Image, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -40,8 +40,10 @@ interface Props {
   onNavigateToHome: () => void;
   onNavigateToMedia: () => void;
   onNavigateToInvitations?: () => void;
+  onNavigateToUsers?: () => void;
   showInvitations?: boolean;
   isInvitationsView?: boolean;
+  isUsersView?: boolean;
   isOpen: boolean;
   onToggle: () => void;
 }
@@ -59,8 +61,10 @@ export default function Sidebar({
   onNavigateToHome,
   onNavigateToMedia,
   onNavigateToInvitations,
+  onNavigateToUsers,
   showInvitations,
   isInvitationsView,
+  isUsersView,
   isOpen,
   onToggle
 }: Props) {
@@ -258,7 +262,7 @@ export default function Sidebar({
               </div>
             </div>
 
-            {showInvitations && onNavigateToInvitations && (
+            {showInvitations && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between px-3 py-2">
                   <div className="flex items-center gap-2">
@@ -270,25 +274,50 @@ export default function Sidebar({
                 </div>
 
                 <div className="space-y-1">
-                  <button
-                    onClick={() => {
-                      onNavigateToInvitations();
-                      if (window.innerWidth < 1024) onToggle();
-                    }}
-                    className={cn(
-                      "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                      "hover:bg-accent/10 hover:text-primary",
-                      activeSection === 'admin' && isInvitationsView
-                        ? "bg-primary/10 text-primary border-l-2 border-primary"
-                        : "text-muted-foreground"
-                    )}
-                  >
-                    <ChevronRight className={cn(
-                      "h-4 w-4 transition-transform duration-200",
-                      activeSection === 'admin' && isInvitationsView && "rotate-90"
-                    )} />
-                    <span>Invitations</span>
-                  </button>
+                  {onNavigateToUsers && (
+                    <button
+                      onClick={() => {
+                        onNavigateToUsers();
+                        if (window.innerWidth < 1024) onToggle();
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                        "hover:bg-accent/10 hover:text-primary",
+                        activeSection === 'admin' && isUsersView
+                          ? "bg-primary/10 text-primary border-l-2 border-primary"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      <ChevronRight className={cn(
+                        "h-4 w-4 transition-transform duration-200",
+                        activeSection === 'admin' && isUsersView && "rotate-90"
+                      )} />
+                      <Users className="h-4 w-4" />
+                      <span>Utilisateurs</span>
+                    </button>
+                  )}
+                  {onNavigateToInvitations && (
+                    <button
+                      onClick={() => {
+                        onNavigateToInvitations();
+                        if (window.innerWidth < 1024) onToggle();
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                        "hover:bg-accent/10 hover:text-primary",
+                        activeSection === 'admin' && isInvitationsView
+                          ? "bg-primary/10 text-primary border-l-2 border-primary"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      <ChevronRight className={cn(
+                        "h-4 w-4 transition-transform duration-200",
+                        activeSection === 'admin' && isInvitationsView && "rotate-90"
+                      )} />
+                      <Mail className="h-4 w-4" />
+                      <span>Invitations</span>
+                    </button>
+                  )}
                 </div>
               </div>
             )}

@@ -17,7 +17,7 @@ async function sendInvitationEmail(email: string, token: string, requestUrl: str
     throw new Error('RESEND_API_KEY is not configured');
   }
 
-  const link = new URL('/api/auth/invitations/accept', requestUrl);
+  const link = new URL('/accept-invitation', requestUrl);
   link.searchParams.set('token', token);
 
   const response = await fetch('https://api.resend.com/emails', {

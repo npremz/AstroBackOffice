@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 
 type Invitation = {
@@ -104,10 +106,30 @@ export default function Invitations() {
 
   const invitationLink = useMemo(() => {
     if (!latestToken) return null;
-    const url = new URL('/api/auth/invitations/accept', window.location.origin);
+    const url = new URL('/accept-invitation', window.location.origin);
     url.searchParams.set('token', latestToken);
     return url.toString();
   }, [latestToken]);
+
+  const handleDelete = async (id: number) => {
+    try {
+      const response = await fetch(`/api/auth/invitations/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        toast.error(data?.error || "Impossible de supprimer l'invitation");
+        return;
+      }
+
+      setInvitations((prev) => prev.filter((inv) => inv.id !== id));
+      toast.success('Invitation supprimée');
+    } catch (err) {
+      console.error(err);
+      toast.error('Une erreur est survenue');
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -197,12 +219,13 @@ export default function Invitations() {
                 <TableHead>Statut</TableHead>
                 <TableHead>Expire le</TableHead>
                 <TableHead>Créée le</TableHead>
+                <TableHead className="w-[70px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {invitations.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
                     Aucune invitation pour le moment.
                   </TableCell>
                 </TableRow>
@@ -215,6 +238,29 @@ export default function Invitations() {
                   <TableCell>{statusBadge(invitation)}</TableCell>
                   <TableCell>{formatDate(invitation.expiresAt)}</TableCell>
                   <TableCell>{formatDate(invitation.createdAt)}</TableCell>
+                  <TableCell>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Supprimer l'invitation ?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Cette action est irréversible. L'invitation pour {invitation.email} sera définitivement supprimée.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(invitation.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Supprimer
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
