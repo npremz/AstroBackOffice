@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import RichTextEditor from './RichTextEditor';
 import MediaPicker from './MediaPicker';
+import { apiPost } from '@/lib/api-client';
 
 interface Collection {
   id: number;
@@ -172,20 +173,13 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
     try {
       if (entry) {
         // Save draft for existing entry
-        const response = await fetch(`/api/entries/${entry.id}/draft`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            data: formData,
-            slug: fullSlug,
-            template
-          })
+        const draft = await apiPost(`/api/entries/${entry.id}/draft`, {
+          data: formData,
+          slug: fullSlug,
+          template
         });
 
-        if (!response.ok) throw new Error('Failed to save draft');
-
-        const draft = await response.json();
-        setDraftId(draft.id);
+        setDraftId((draft as any).id);
         setHasDraft(true);
 
         toast.success('Draft saved successfully!', {
@@ -193,18 +187,12 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
         });
       } else {
         // Create new entry as draft
-        const response = await fetch('/api/revisions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            collectionId: collection.id,
-            slug: fullSlug,
-            data: formData,
-            template
-          })
+        await apiPost('/api/revisions', {
+          collectionId: collection.id,
+          slug: fullSlug,
+          data: formData,
+          template
         });
-
-        if (!response.ok) throw new Error('Failed to create draft');
 
         toast.success('Draft created successfully!', {
           description: 'Your entry has been saved as a draft.',
@@ -238,24 +226,13 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
         template
       };
 
-      let response;
       if (entry) {
         // Publish existing entry
-        response = await fetch(`/api/entries/${entry.id}/publish`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        await apiPost(`/api/entries/${entry.id}/publish`, payload);
       } else {
         // Create and publish new entry
-        response = await fetch('/api/entries', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        await apiPost('/api/entries', payload);
       }
-
-      if (!response.ok) throw new Error('Failed to publish');
 
       const entryTitle = formData.title || fullSlug;
       toast.success('Entry published successfully!', {
@@ -285,22 +262,11 @@ export default function EntryEditor({ collection, entry, onBack, onSaveSuccess }
       sessionStorage.setItem('preview-data', JSON.stringify(previewData));
 
       // Also save to API for server-side rendering
-      const response = await fetch('/api/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(previewData)
-      });
-
-      if (response.ok) {
-        const { previewId } = await response.json();
-        // Open preview window with dynamic layout rendering (Solution 3)
-        window.open(`/preview-render/${fullSlug}?id=${previewId}`, '_blank');
-      } else {
-        // Fallback to sessionStorage only (generic preview)
-        window.open(`/preview/${fullSlug}`, '_blank');
-      }
+      const result = await apiPost<{ previewId: string }>('/api/preview', previewData);
+      // Open preview window with dynamic layout rendering
+      window.open(`/preview-render/${fullSlug}?id=${result.previewId}`, '_blank');
     } catch (error) {
-      // Fallback to sessionStorage only
+      // Fallback to sessionStorage only (generic preview)
       window.open(`/preview/${fullSlug}`, '_blank');
     }
   };

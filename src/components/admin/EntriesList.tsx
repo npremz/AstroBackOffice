@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { apiDelete } from '@/lib/api-client';
 
 interface Collection {
   id: number;
@@ -55,7 +56,8 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
   const fetchEntries = async () => {
     setLoading(true);
     const response = await fetch(`/api/entries?collectionId=${collection.id}`);
-    const data: Entry[] = await response.json();
+    const result = await response.json();
+    const data: Entry[] = result.data || result;
 
     // Check for drafts for each entry
     const entriesWithDraftStatus = await Promise.all(
@@ -89,8 +91,7 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/entries/${entryToDelete.id}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error('Failed to delete');
+      await apiDelete(`/api/entries/${entryToDelete.id}`);
 
       toast.success('Entry deleted successfully!', {
         description: `"${entryToDelete.data.title || entryToDelete.slug}" has been removed.`,

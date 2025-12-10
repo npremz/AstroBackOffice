@@ -13,6 +13,7 @@ import SingleTypeContentEditor from './SingleTypeContentEditor';
 import MediaLibrary from './MediaLibrary';
 import Invitations from './Invitations';
 import Users from './Users';
+import { initCsrf } from '@/lib/api-client';
 
 interface Collection {
   id: number;
@@ -79,14 +80,16 @@ export default function AdminDashboard() {
 
   const fetchCollections = async () => {
     const response = await fetch('/api/collections');
-    const data = await response.json();
-    setCollections(data);
+    const result = await response.json();
+    // Handle paginated response
+    setCollections(result.data || result);
   };
 
   const fetchSingleTypes = async () => {
     const response = await fetch('/api/content-modules');
-    const data = await response.json();
-    setSingleTypes(data);
+    const result = await response.json();
+    // Handle paginated response
+    setSingleTypes(result.data || result);
   };
 
   // Load state from URL parameters - memoized with useCallback
@@ -196,7 +199,11 @@ export default function AdminDashboard() {
           throw new Error('Auth check failed');
         }
         const data = await response.json();
-        setUser(data);
+        // Initialize CSRF token from response
+        if (data.csrfToken) {
+          initCsrf(data.csrfToken);
+        }
+        setUser(data.user || data);
         await Promise.all([fetchCollections(), fetchSingleTypes()]);
       } catch (error) {
         console.error('Failed to verify session', error);

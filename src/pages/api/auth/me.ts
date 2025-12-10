@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getSession, publicUser } from '@/lib/auth';
+import { getCsrfFromCookie, generateCsrfToken, setCsrfCookie } from '@/lib/csrf';
 
 export const GET: APIRoute = async ({ cookies }) => {
   try {
@@ -11,7 +12,17 @@ export const GET: APIRoute = async ({ cookies }) => {
       });
     }
 
-    return new Response(JSON.stringify(publicUser(session.user)), {
+    // Ensure CSRF token exists and return it
+    let csrfToken = getCsrfFromCookie(cookies);
+    if (!csrfToken) {
+      csrfToken = generateCsrfToken();
+      setCsrfCookie(cookies, csrfToken);
+    }
+
+    return new Response(JSON.stringify({
+      user: publicUser(session.user),
+      csrfToken,
+    }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });

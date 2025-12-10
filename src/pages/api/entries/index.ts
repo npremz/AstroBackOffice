@@ -1,30 +1,47 @@
 import type { APIRoute } from 'astro';
 import { db } from '../../../db';
 import { entries, collections } from '../../../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { createEntrySchema, validateBody, validationError, sanitizeEntryData } from '@/lib/validation';
+import { parsePaginationParams, getOffset, paginatedResponse } from '@/lib/pagination';
 
-// GET all entries or entries by collection
+// GET all entries or entries by collection (with pagination)
 export const GET: APIRoute = async ({ url }) => {
   try {
     const collectionId = url.searchParams.get('collectionId');
+    const pagination = parsePaginationParams(url);
+    const offset = getOffset(pagination);
 
-    let allEntries;
+    let whereClause = undefined;
     if (collectionId) {
       const parsed = parseInt(collectionId);
       if (isNaN(parsed) || parsed < 1) {
         return validationError('Invalid collectionId');
       }
-      allEntries = await db.select().from(entries).where(eq(entries.collectionId, parsed));
-    } else {
-      allEntries = await db.select().from(entries);
+      whereClause = eq(entries.collectionId, parsed);
     }
 
-    return new Response(JSON.stringify(allEntries), {
+    // Get total count
+    const countQuery = db.select({ count: sql<number>`count(*)` }).from(entries);
+    if (whereClause) {
+      countQuery.where(whereClause);
+    }
+    const [{ count }] = await countQuery;
+    const total = Number(count);
+
+    // Get paginated data
+    const query = db.select().from(entries);
+    if (whereClause) {
+      query.where(whereClause);
+    }
+    const data = await query.limit(pagination.limit).offset(offset);
+
+    return new Response(JSON.stringify(paginatedResponse(data, pagination, total)), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
+    console.error('Fetch entries error:', error);
     return new Response(JSON.stringify({ error: 'Failed to fetch entries' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

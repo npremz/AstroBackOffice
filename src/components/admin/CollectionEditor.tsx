@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { apiPost, apiPut } from '@/lib/api-client';
 
 interface FieldSchema {
   label: string;
@@ -110,19 +111,11 @@ export default function CollectionEditor({ collection, onBack, onSaveSuccess }: 
     try {
       const payload = { slug, schema: fields };
 
-      const response = collection
-        ? await fetch(`/api/collections/${collection.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          })
-        : await fetch('/api/collections', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-      if (!response.ok) throw new Error('Failed to save');
+      if (collection) {
+        await apiPut(`/api/collections/${collection.id}`, payload);
+      } else {
+        await apiPost('/api/collections', payload);
+      }
 
       toast.success(
         collection ? 'Collection updated successfully!' : 'Collection created successfully!',

@@ -1,16 +1,28 @@
 import type { APIRoute } from 'astro';
 import { db } from '../../../db';
 import { collections } from '../../../db/schema';
+import { sql } from 'drizzle-orm';
 import { createCollectionSchema, validateBody, validationError } from '@/lib/validation';
+import { parsePaginationParams, getOffset, paginatedResponse } from '@/lib/pagination';
 
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ url }) => {
   try {
-    const allCollections = await db.select().from(collections);
-    return new Response(JSON.stringify(allCollections), {
+    const pagination = parsePaginationParams(url);
+    const offset = getOffset(pagination);
+
+    // Get total count
+    const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(collections);
+    const total = Number(count);
+
+    // Get paginated data
+    const data = await db.select().from(collections).limit(pagination.limit).offset(offset);
+
+    return new Response(JSON.stringify(paginatedResponse(data, pagination, total)), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
+    console.error('Fetch collections error:', error);
     return new Response(JSON.stringify({ error: 'Failed to fetch collections' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

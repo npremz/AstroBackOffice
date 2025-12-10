@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { apiUpload, apiDelete, apiPut } from '@/lib/api-client';
 
 interface MediaItem {
   id: number;
@@ -50,7 +51,8 @@ export default function MediaLibrary() {
     try {
       const response = await fetch('/api/media');
       if (!response.ok) throw new Error('Failed to fetch');
-      const data = await response.json();
+      const result = await response.json();
+      const data = result.data || result;
       setMedia(data);
       setFilteredMedia(data);
     } catch (error) {
@@ -72,20 +74,14 @@ export default function MediaLibrary() {
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('/api/media', {
-          method: 'POST',
-          body: formData
-        });
-
-        if (!response.ok) throw new Error(`Failed to upload ${file.name}`);
-        const newMedia = await response.json();
+        const newMedia = await apiUpload<MediaItem>('/api/media', formData);
         uploadedItems.push(newMedia);
       }
 
       toast.success(`Successfully uploaded ${uploadedItems.length} ${uploadedItems.length === 1 ? 'image' : 'images'}`);
       fetchMedia();
-    } catch (error) {
-      toast.error('Failed to upload some images');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to upload some images');
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
@@ -98,11 +94,7 @@ export default function MediaLibrary() {
     if (!confirm(`Delete "${item.originalName}"?`)) return;
 
     try {
-      const response = await fetch(`/api/media/${item.id}`, {
-        method: 'DELETE'
-      });
-
-      if (!response.ok) throw new Error('Failed to delete');
+      await apiDelete(`/api/media/${item.id}`);
 
       toast.success('Image deleted');
       fetchMedia();
@@ -118,13 +110,7 @@ export default function MediaLibrary() {
     if (!selectedMedia) return;
 
     try {
-      const response = await fetch(`/api/media/${selectedMedia.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ alt: editingAlt })
-      });
-
-      if (!response.ok) throw new Error('Failed to update');
+      await apiPut(`/api/media/${selectedMedia.id}`, { alt: editingAlt });
 
       toast.success('Alt text updated');
       fetchMedia();

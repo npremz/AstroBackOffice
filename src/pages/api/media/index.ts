@@ -1,11 +1,12 @@
 import type { APIRoute } from 'astro';
 import { db } from '@/db';
 import { media } from '@/db/schema';
-import { desc } from 'drizzle-orm';
+import { desc, sql } from 'drizzle-orm';
 import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { checkRateLimit, getClientId, rateLimitResponse, uploadRateLimit } from '@/lib/rate-limit';
+import { parsePaginationParams, getOffset, paginatedResponse } from '@/lib/pagination';
 
 // Allowed MIME types
 const ALLOWED_MIME_TYPES = [
@@ -46,11 +47,23 @@ function sanitizeFilename(filename: string): string {
     .slice(0, 200);
 }
 
-// GET /api/media - List all media
-export const GET: APIRoute = async () => {
+// GET /api/media - List all media (with pagination)
+export const GET: APIRoute = async ({ url }) => {
   try {
-    const mediaList = await db.select().from(media).orderBy(desc(media.uploadedAt));
-    return new Response(JSON.stringify(mediaList), {
+    const pagination = parsePaginationParams(url);
+    const offset = getOffset(pagination);
+
+    // Get total count
+    const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(media);
+    const total = Number(count);
+
+    // Get paginated data
+    const data = await db.select().from(media)
+      .orderBy(desc(media.uploadedAt))
+      .limit(pagination.limit)
+      .offset(offset);
+
+    return new Response(JSON.stringify(paginatedResponse(data, pagination, total)), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
