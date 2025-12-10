@@ -1,4 +1,4 @@
-import { Layers, Package, Plus, ChevronRight, Menu, X, Mail, Home, Image, Users } from 'lucide-react';
+import { Layers, Package, Plus, ChevronRight, Menu, X, Mail, Home, Image, Users, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -346,6 +346,22 @@ export default function Sidebar({
                 <ChevronRight className="h-4 w-4 mr-2" />
                 <span className="font-medium">Back to Site</span>
               </a>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-muted-foreground hover:text-destructive"
+              onClick={async () => {
+                try {
+                  await fetch('/api/auth/logout', { method: 'POST' });
+                  window.location.href = '/login';
+                } catch (err) {
+                  console.error('Logout failed', err);
+                }
+              }}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              <span className="font-medium">Déconnexion</span>
             </Button>
           </div>
         </div>
