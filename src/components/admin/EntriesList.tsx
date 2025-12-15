@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, FileText, Edit, Trash2, ChevronLeft, ExternalLink, Loader2, Settings, RotateCcw, Clock } from 'lucide-react';
+import { Plus, FileText, Edit, Trash2, ChevronLeft, ExternalLink, Loader2, Settings, RotateCcw, Clock, Copy, ArrowUpDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { apiDelete, apiPost } from '@/lib/api-client';
 import EntriesSearch, { type SearchFilters } from './EntriesSearch';
+import EntriesReorder from './EntriesReorder';
 
 interface Collection {
   id: number;
@@ -36,6 +37,7 @@ interface EntryWithDraft extends Entry {
   hasDraft?: boolean;
   isPublished?: boolean;
   isScheduled?: boolean;
+  sortOrder?: number;
 }
 
 interface Props {
@@ -52,6 +54,8 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<Entry | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [duplicating, setDuplicating] = useState<number | null>(null);
+  const [reorderMode, setReorderMode] = useState(false);
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
     q: '',
     sortBy: 'publishedAt',
@@ -155,6 +159,25 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
     }
   };
 
+  const handleDuplicate = async (entry: Entry) => {
+    setDuplicating(entry.id);
+    try {
+      const duplicated = await apiPost<{ id: number; slug: string }>(`/api/entries/${entry.id}/duplicate`, {});
+      
+      toast.success('Entry duplicated', {
+        description: `Created "${duplicated.slug}" as a draft.`,
+      });
+
+      fetchEntries();
+    } catch (err) {
+      toast.error('Failed to duplicate entry', {
+        description: 'Please try again later.',
+      });
+    } finally {
+      setDuplicating(null);
+    }
+  };
+
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -209,29 +232,60 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
           <Plus className="h-4 w-4 mr-2" />
           <span className="font-semibold">New Entry</span>
         </Button>
-        <Button
-          onClick={() => onEditSchema(collection)}
-          variant="outline"
-          className="w-full border-border/50 hover:bg-accent/10 hover:border-accent/50 transition-all duration-200"
-          size="lg"
-        >
-          <Settings className="h-4 w-4 mr-2" />
-          <span className="font-semibold">Edit Schema</span>
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            onClick={() => onEditSchema(collection)}
+            variant="outline"
+            className="flex-1 border-border/50 hover:bg-accent/10 hover:border-accent/50 transition-all duration-200"
+            size="lg"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            <span className="font-semibold">Edit Schema</span>
+          </Button>
+          {entries.length > 1 && (
+            <Button
+              onClick={() => setReorderMode(!reorderMode)}
+              variant={reorderMode ? "secondary" : "outline"}
+              className="flex-1 border-border/50 hover:bg-accent/10 hover:border-accent/50 transition-all duration-200"
+              size="lg"
+            >
+              <ArrowUpDown className="h-4 w-4 mr-2" />
+              <span className="font-semibold">Reorder</span>
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Reorder Mode */}
+      {reorderMode && entries.length > 1 && (
+        <div className="stagger-fade-in stagger-2">
+          <EntriesReorder
+            entries={entries}
+            collectionId={collection.id}
+            onClose={() => setReorderMode(false)}
+            onSaved={() => {
+              setReorderMode(false);
+              fetchEntries();
+            }}
+          />
+        </div>
+      )}
 
       {/* Search and Filters */}
-      <div className="stagger-fade-in stagger-2">
-        <EntriesSearch
-          onSearch={handleSearch}
-          templates={availableTemplates}
-          loading={loading}
-          resultCount={totalCount}
-        />
-      </div>
+      {!reorderMode && (
+        <div className="stagger-fade-in stagger-2">
+          <EntriesSearch
+            onSearch={handleSearch}
+            templates={availableTemplates}
+            loading={loading}
+            resultCount={totalCount}
+          />
+        </div>
+      )}
 
       {/* Two column layout on desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8">
+      {!reorderMode && (
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8">
         {/* Main Content Area */}
         <div className="space-y-6">
           {/* Loading State */}
@@ -356,6 +410,22 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
                     </a>
                   </Button>
                   <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-muted-foreground/30 hover:bg-muted transition-all duration-200"
+                    onClick={() => handleDuplicate(entry)}
+                    disabled={duplicating === entry.id}
+                  >
+                    {duplicating === entry.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                    <span className="sr-only sm:not-sr-only sm:ml-2 font-semibold">
+                      {duplicating === entry.id ? 'Duplicating...' : 'Duplicate'}
+                    </span>
+                  </Button>
+                  <Button
                     variant="destructive"
                     size="sm"
                     className="shadow-md hover:shadow-lg transition-all duration-200"
@@ -436,6 +506,17 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
                     <Plus className="h-4 w-4 mr-2" />
                     <span className="font-semibold">New Entry</span>
                   </Button>
+                  {entries.length > 1 && (
+                    <Button
+                      onClick={() => setReorderMode(!reorderMode)}
+                      variant={reorderMode ? "secondary" : "outline"}
+                      className="w-full border-border/50 hover:bg-accent/10 hover:border-accent/50 transition-all duration-200"
+                      size="lg"
+                    >
+                      <ArrowUpDown className="h-4 w-4 mr-2" />
+                      <span className="font-semibold">{reorderMode ? 'Exit Reorder' : 'Reorder Entries'}</span>
+                    </Button>
+                  )}
                   <Button
                     onClick={() => onEditSchema(collection)}
                     variant="outline"
@@ -460,6 +541,7 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
           </div>
         </div>
       </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

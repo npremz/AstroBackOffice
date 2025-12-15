@@ -21,6 +21,7 @@ async function sendInvitationEmail(email: string, token: string, requestUrl: str
   const link = new URL('/accept-invitation', requestUrl);
   link.searchParams.set('token', token);
 
+  const linkStr = link.toString();
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -31,12 +32,36 @@ async function sendInvitationEmail(email: string, token: string, requestUrl: str
       from: RESEND_FROM,
       to: email,
       subject: 'Invitation à rejoindre le CMS',
-      text: `Vous avez été invité à rejoindre le backoffice. Acceptez l'invitation ici : ${link.toString()}`,
+      text: `Vous avez été invité à rejoindre le backoffice.\n\nAcceptez l'invitation ici : ${linkStr}\n\nCe lien expire dans 7 jours.`,
       html: `
-        <p>Bonjour,</p>
-        <p>Vous avez été invité à rejoindre le backoffice.</p>
-        <p><a href="${link.toString()}">Cliquez ici pour accepter l'invitation</a></p>
-        <p>Ou copiez ce lien dans votre navigateur : <br />${link.toString()}</p>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0; text-align: center;">
+              <h1 style="margin: 0; font-size: 24px;">📧 Invitation CMS BackOffice</h1>
+            </div>
+            <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px;">
+              <p style="margin: 0 0 16px 0;">Bonjour,</p>
+              <p style="margin: 0 0 16px 0;">Vous avez été invité à rejoindre le backoffice. Cliquez sur le bouton ci-dessous pour créer votre compte.</p>
+              <p style="text-align: center; margin: 24px 0;">
+                <a href="${linkStr}" style="display: inline-block; background: #667eea; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">Accepter l'invitation</a>
+              </p>
+              <p style="margin: 16px 0 8px 0; font-size: 14px; color: #6b7280;">Ou copiez ce lien dans votre navigateur :</p>
+              <p style="word-break: break-all; background: #e5e7eb; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; margin: 0;">
+                <a href="${linkStr}" style="color: #667eea; text-decoration: underline;">${linkStr}</a>
+              </p>
+              <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">
+                <p style="margin: 0;">⏰ Ce lien expire dans <strong>7 jours</strong>.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
       `,
     }),
   });

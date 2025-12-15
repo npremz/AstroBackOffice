@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { db } from '../../../db';
 import { contentModules } from '../../../db/schema';
-import { sql } from 'drizzle-orm';
+import { sql, isNull } from 'drizzle-orm';
 import { createContentModuleSchema, validateBody, validationError, sanitizeEntryData } from '@/lib/validation';
 import { parsePaginationParams, getOffset, paginatedResponse } from '@/lib/pagination';
 import { requireAuth } from '@/lib/auth';
@@ -12,12 +12,18 @@ export const GET: APIRoute = async ({ url }) => {
     const pagination = parsePaginationParams(url);
     const offset = getOffset(pagination);
 
-    // Get total count
-    const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(contentModules);
+    // Get total count (excluding soft-deleted)
+    const [{ count }] = await db.select({ count: sql<number>`count(*)` })
+      .from(contentModules)
+      .where(isNull(contentModules.deletedAt));
     const total = Number(count);
 
-    // Get paginated data
-    const data = await db.select().from(contentModules).limit(pagination.limit).offset(offset);
+    // Get paginated data (excluding soft-deleted)
+    const data = await db.select()
+      .from(contentModules)
+      .where(isNull(contentModules.deletedAt))
+      .limit(pagination.limit)
+      .offset(offset);
 
     return new Response(JSON.stringify(paginatedResponse(data, pagination, total)), {
       status: 200,

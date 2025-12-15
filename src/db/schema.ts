@@ -38,6 +38,8 @@ export const entries = sqliteTable('entries', {
   deletedAt: integer('deleted_at', { mode: 'timestamp' }),
   // Scheduled publishing - if set, entry won't be visible until this date
   scheduledAt: integer('scheduled_at', { mode: 'timestamp' }),
+  // Sort order for manual ordering
+  sortOrder: integer('sort_order').default(0),
 });
 
 // Drafts & History (Admin workspace)
@@ -62,6 +64,8 @@ export const contentModules = sqliteTable('content_modules', {
   }>>(),
   data: text('data', { mode: 'json' }).notNull().$type<Record<string, any>>(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  // Soft delete
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
 });
 
 // Media Library (Uploaded images and files)

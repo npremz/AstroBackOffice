@@ -550,3 +550,135 @@ describe('File Size Formatting', () => {
     expect(formatFileSize(2147483648)).toBe('2 GB');
   });
 });
+
+describe('Duplication Feature', () => {
+  describe('Slug generation for duplicates', () => {
+    const generateDuplicateSlug = (originalSlug: string, existingSlugs: string[]): string => {
+      let newSlug = `${originalSlug}-copy`;
+      let counter = 1;
+      
+      while (existingSlugs.includes(newSlug)) {
+        counter++;
+        newSlug = `${originalSlug}-copy-${counter}`;
+      }
+      
+      return newSlug;
+    };
+
+    it('should append -copy for first duplicate', () => {
+      expect(generateDuplicateSlug('my-post', [])).toBe('my-post-copy');
+    });
+
+    it('should append -copy when no conflict', () => {
+      expect(generateDuplicateSlug('my-post', ['other-post'])).toBe('my-post-copy');
+    });
+
+    it('should append -copy-2 when -copy exists', () => {
+      expect(generateDuplicateSlug('my-post', ['my-post-copy'])).toBe('my-post-copy-2');
+    });
+
+    it('should increment counter for multiple duplicates', () => {
+      const existing = ['my-post-copy', 'my-post-copy-2', 'my-post-copy-3'];
+      expect(generateDuplicateSlug('my-post', existing)).toBe('my-post-copy-4');
+    });
+
+    it('should handle gaps in numbering', () => {
+      const existing = ['my-post-copy', 'my-post-copy-3'];
+      expect(generateDuplicateSlug('my-post', existing)).toBe('my-post-copy-2');
+    });
+  });
+
+  describe('Single type name generation for duplicates', () => {
+    const generateDuplicateName = (originalName: string, counter: number): string => {
+      if (counter === 1) return `${originalName} (Copy)`;
+      return `${originalName} (Copy ${counter})`;
+    };
+
+    it('should append (Copy) for first duplicate', () => {
+      expect(generateDuplicateName('About Page', 1)).toBe('About Page (Copy)');
+    });
+
+    it('should append (Copy N) for subsequent duplicates', () => {
+      expect(generateDuplicateName('About Page', 2)).toBe('About Page (Copy 2)');
+      expect(generateDuplicateName('About Page', 3)).toBe('About Page (Copy 3)');
+    });
+  });
+
+  describe('Entry duplication data handling', () => {
+    it('should create draft status for duplicated entry', () => {
+      const original = {
+        id: 1,
+        slug: 'blog/my-post',
+        data: { title: 'My Post', content: 'Content here' },
+        template: 'BlogLayout',
+        status: 'published',
+        scheduledAt: new Date('2025-01-01'),
+        seo: { metaTitle: 'My Post' },
+      };
+
+      const duplicated = {
+        ...original,
+        id: 2,
+        slug: 'blog/my-post-copy',
+        status: 'draft',
+        scheduledAt: null, // Should not copy scheduling
+        deletedAt: null,
+        publishedAt: null,
+      };
+
+      expect(duplicated.status).toBe('draft');
+      expect(duplicated.scheduledAt).toBeNull();
+      expect(duplicated.data).toEqual(original.data);
+      expect(duplicated.seo).toEqual(original.seo);
+    });
+
+    it('should preserve data and SEO metadata', () => {
+      const originalData = {
+        title: 'Test',
+        content: '<p>Rich content</p>',
+        image: '/images/test.jpg',
+      };
+      const originalSeo = {
+        metaTitle: 'Test | Site',
+        metaDescription: 'Description',
+        ogImage: 'https://example.com/og.jpg',
+      };
+
+      const duplicatedEntry = {
+        data: { ...originalData },
+        seo: { ...originalSeo },
+      };
+
+      expect(duplicatedEntry.data).toEqual(originalData);
+      expect(duplicatedEntry.seo).toEqual(originalSeo);
+    });
+  });
+
+  describe('Single type duplication data handling', () => {
+    it('should copy schema and data', () => {
+      const original = {
+        id: 1,
+        slug: 'about',
+        name: 'About Page',
+        schema: [
+          { label: 'Title', type: 'text', key: 'title', required: true },
+          { label: 'Content', type: 'richtext', key: 'content', required: false },
+        ],
+        data: { title: 'About Us', content: '<p>Our story</p>' },
+      };
+
+      const duplicated = {
+        id: 2,
+        slug: 'about-copy',
+        name: 'About Page (Copy)',
+        schema: [...original.schema],
+        data: { ...original.data },
+      };
+
+      expect(duplicated.schema).toEqual(original.schema);
+      expect(duplicated.data).toEqual(original.data);
+      expect(duplicated.slug).toBe('about-copy');
+      expect(duplicated.name).toBe('About Page (Copy)');
+    });
+  });
+});

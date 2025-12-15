@@ -46,6 +46,8 @@ export const GET: APIRoute = async ({ url }) => {
         data: entries.data,
         template: entries.template,
         publishedAt: entries.publishedAt,
+        scheduledAt: entries.scheduledAt,
+        sortOrder: entries.sortOrder,
       })
       .from(entries);
     

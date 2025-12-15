@@ -36,8 +36,9 @@ export const onRequest: MiddlewareHandler = async ({ url, cookies, request }, ne
     }
   }
 
-  // CSRF validation for auth mutations (except login which doesn't have a token yet)
-  if (pathname.startsWith('/api/auth') && !pathname.endsWith('/login')) {
+  // CSRF validation for auth mutations (except login and accept invitation which don't have a token yet)
+  const csrfExemptAuthRoutes = ['/api/auth/login', '/api/auth/invitations/accept'];
+  if (pathname.startsWith('/api/auth') && !csrfExemptAuthRoutes.includes(pathname)) {
     if (requiresCsrfValidation(request.method)) {
       if (!validateCsrf(cookies, request)) {
         return csrfError();

@@ -1,7 +1,18 @@
-import { Plus, Package, Edit, Settings } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Package, Edit, Settings, Copy, Loader2, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { apiPost, apiDelete } from '@/lib/api-client';
 
 interface SingleType {
   id: number;
@@ -22,16 +33,107 @@ interface Props {
   onSelectSingle: (single: SingleType) => void;
   onCreateSingle: () => void;
   onEditSingleSchema: (single: SingleType) => void;
+  onRefresh?: () => void;
 }
 
 export default function SingleTypesList({
   singleTypes,
   onSelectSingle,
   onCreateSingle,
-  onEditSingleSchema
+  onEditSingleSchema,
+  onRefresh
 }: Props) {
+  const [duplicating, setDuplicating] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [singleToDelete, setSingleToDelete] = useState<SingleType | null>(null);
+
+  const handleDuplicate = async (single: SingleType, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDuplicating(single.id);
+    try {
+      const duplicated = await apiPost<{ id: number; name: string; slug: string }>(`/api/content-modules/${single.id}/duplicate`, {});
+      
+      toast.success('Single type duplicated', {
+        description: `Created "${duplicated.name}" with the same schema and data.`,
+      });
+
+      onRefresh?.();
+    } catch (err) {
+      toast.error('Failed to duplicate single type', {
+        description: 'Please try again later.',
+      });
+    } finally {
+      setDuplicating(null);
+    }
+  };
+
+  const handleDeleteClick = (single: SingleType, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSingleToDelete(single);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!singleToDelete) return;
+
+    setDeleting(true);
+    try {
+      await apiDelete(`/api/content-modules/${singleToDelete.id}`);
+
+      toast.success('Single type deleted', {
+        description: `"${singleToDelete.name}" has been permanently deleted.`,
+      });
+
+      onRefresh?.();
+    } catch (err) {
+      toast.error('Failed to delete single type', {
+        description: 'Please try again later.',
+      });
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+      setSingleToDelete(null);
+    }
+  };
+
   return (
     <div className="space-y-8">
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Single Type</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{singleToDelete?.name}"? This action cannot be undone and all content will be permanently lost.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Editorial Header */}
       <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between stagger-fade-in stagger-1">
         <div className="space-y-2">
@@ -148,14 +250,40 @@ export default function SingleTypesList({
                   <Button
                     variant="outline"
                     size="sm"
+                    className="border-border/50 hover:bg-muted transition-all duration-200"
+                    onClick={(e) => handleDuplicate(single, e)}
+                    disabled={duplicating === single.id}
+                    title="Duplicate single type"
+                  >
+                    {duplicating === single.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                    <span className="sr-only">Duplicate</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="border-border/50 hover:bg-accent/10 hover:border-accent/50 transition-all duration-200"
                     onClick={(e) => {
                       e.stopPropagation();
                       onEditSingleSchema(single);
                     }}
+                    title="Edit schema"
                   >
                     <Settings className="h-3.5 w-3.5" />
                     <span className="sr-only">Schema</span>
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="shadow-md hover:shadow-lg transition-all duration-200"
+                    onClick={(e) => handleDeleteClick(single, e)}
+                    title="Delete single type"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span className="sr-only">Delete</span>
                   </Button>
                 </CardFooter>
               </Card>

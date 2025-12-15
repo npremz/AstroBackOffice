@@ -618,7 +618,7 @@ export default function AdminDashboard() {
       />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-x-hidden lg:ml-72">
+      <main className="flex-1 lg:ml-72">
         {/* Top Bar with Breadcrumbs - Fixed */}
         <div className="fixed top-0 right-0 left-0 lg:left-72 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50 shadow-sm">
           <div className="px-4 py-4 sm:px-6 lg:px-8">
@@ -690,6 +690,7 @@ export default function AdminDashboard() {
               onSelectSingle={handleSelectSingle}
               onCreateSingle={handleCreateSingle}
               onEditSingleSchema={handleEditSingleSchema}
+              onRefresh={fetchSingleTypes}
             />
           )}
 

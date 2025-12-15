@@ -115,7 +115,7 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
   }
 };
 
-// DELETE content module
+// DELETE content module (soft delete)
 export const DELETE: APIRoute = async ({ params, request, cookies }) => {
   const auth = await requireAuth(cookies);
   if ('response' in auth) return auth.response;
@@ -137,7 +137,10 @@ export const DELETE: APIRoute = async ({ params, request, cookies }) => {
       });
     }
 
-    await db.delete(contentModules).where(eq(contentModules.id, id));
+    // Soft delete - set deletedAt timestamp
+    await db.update(contentModules)
+      .set({ deletedAt: new Date() })
+      .where(eq(contentModules.id, id));
 
     await logAudit(auditContext, {
       action: 'DELETE',
