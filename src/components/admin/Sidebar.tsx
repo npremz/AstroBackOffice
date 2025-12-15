@@ -1,4 +1,4 @@
-import { Layers, Package, Plus, ChevronRight, Menu, X, Mail, Home, Image, Users, LogOut, History, Trash2 } from 'lucide-react';
+import { Layers, Package, Plus, ChevronRight, Menu, X, Mail, Home, Image, Users, LogOut, History, Trash2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -30,7 +30,7 @@ interface SingleType {
 interface Props {
   collections: Collection[];
   singleTypes: SingleType[];
-  activeSection: 'collections' | 'single' | 'media' | 'admin';
+  activeSection: 'collections' | 'single' | 'media' | 'files' | 'admin';
   selectedCollectionId?: number;
   selectedSingleId?: number;
   onSelectCollection: (collection: Collection) => void;
@@ -39,6 +39,7 @@ interface Props {
   onCreateSingle: () => void;
   onNavigateToHome: () => void;
   onNavigateToMedia: () => void;
+  onNavigateToFiles?: () => void;
   onNavigateToInvitations?: () => void;
   onNavigateToUsers?: () => void;
   onNavigateToAuditLogs?: () => void;
@@ -48,6 +49,7 @@ interface Props {
   isUsersView?: boolean;
   isAuditLogsView?: boolean;
   isTrashView?: boolean;
+  isFilesView?: boolean;
   isOpen: boolean;
   onToggle: () => void;
 }
@@ -64,6 +66,7 @@ export default function Sidebar({
   onCreateSingle,
   onNavigateToHome,
   onNavigateToMedia,
+  onNavigateToFiles,
   onNavigateToInvitations,
   onNavigateToUsers,
   onNavigateToAuditLogs,
@@ -73,6 +76,7 @@ export default function Sidebar({
   isUsersView,
   isAuditLogsView,
   isTrashView,
+  isFilesView,
   isOpen,
   onToggle
 }: Props) {
@@ -269,6 +273,42 @@ export default function Sidebar({
                 </button>
               </div>
             </div>
+
+            {/* Files Section */}
+            {onNavigateToFiles && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-blue-600" />
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                      Documents
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <button
+                    onClick={() => {
+                      onNavigateToFiles();
+                      if (window.innerWidth < 1024) onToggle();
+                    }}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                      "hover:bg-accent/10 hover:text-primary",
+                      activeSection === 'files'
+                        ? "bg-primary/10 text-primary border-l-2 border-primary"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    <ChevronRight className={cn(
+                      "h-4 w-4 transition-transform duration-200",
+                      activeSection === 'files' && "rotate-90"
+                    )} />
+                    <span>Library</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Trash - accessible to all users */}
             {onNavigateToTrash && (

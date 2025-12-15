@@ -4,7 +4,7 @@ import DOMPurify from 'isomorphic-dompurify';
 // Schema field definition
 export const schemaFieldSchema = z.object({
   label: z.string().min(1).max(100),
-  type: z.enum(['text', 'textarea', 'number', 'richtext', 'image']),
+  type: z.enum(['text', 'textarea', 'number', 'richtext', 'image', 'document']),
   key: z.string().min(1).max(50).regex(/^[a-zA-Z][a-zA-Z0-9_]*$/, 'Key must start with a letter and contain only alphanumeric characters and underscores'),
   required: z.boolean(),
 });

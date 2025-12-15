@@ -11,6 +11,7 @@ import SingleTypesList from './SingleTypesList';
 import SingleTypeEditor from './SingleTypeEditor';
 import SingleTypeContentEditor from './SingleTypeContentEditor';
 import MediaLibrary from './MediaLibrary';
+import FilesLibrary from './FilesLibrary';
 import Invitations from './Invitations';
 import Users from './Users';
 import AuditLogs from './AuditLogs';
@@ -51,8 +52,8 @@ interface SingleType {
   updatedAt: Date;
 }
 
-type ViewType = 'dashboard' | 'collections' | 'collection-editor' | 'entries' | 'entry-editor' | 'single' | 'single-schema-editor' | 'single-content-editor' | 'media' | 'invitations' | 'users' | 'audit-logs' | 'trash';
-type Section = 'collections' | 'single' | 'media' | 'admin';
+type ViewType = 'dashboard' | 'collections' | 'collection-editor' | 'entries' | 'entry-editor' | 'single' | 'single-schema-editor' | 'single-content-editor' | 'media' | 'files' | 'invitations' | 'users' | 'audit-logs' | 'trash';
+type Section = 'collections' | 'single' | 'media' | 'files' | 'admin';
 
 interface User {
   id: number;
@@ -457,6 +458,12 @@ export default function AdminDashboard() {
     updateURL('media', 'media');
   };
 
+  const handleNavigateToFiles = () => {
+    setActiveSection('files');
+    setView('files');
+    updateURL('files', 'files');
+  };
+
   const handleNavigateToInvitations = () => {
     setActiveSection('admin');
     setView('invitations');
@@ -512,6 +519,11 @@ export default function AdminDashboard() {
 
     if (activeSection === 'media') {
       breadcrumbs.push({ label: 'Media Library' });
+      return breadcrumbs;
+    }
+
+    if (activeSection === 'files') {
+      breadcrumbs.push({ label: 'Files Library' });
       return breadcrumbs;
     }
 
@@ -594,11 +606,13 @@ export default function AdminDashboard() {
         onNavigateToUsers={handleNavigateToUsers}
         onNavigateToAuditLogs={handleNavigateToAuditLogs}
         onNavigateToTrash={handleOpenTrash}
+        onNavigateToFiles={handleNavigateToFiles}
         showInvitations={user?.role === 'super_admin'}
         isInvitationsView={view === 'invitations'}
         isUsersView={view === 'users'}
         isAuditLogsView={view === 'audit-logs'}
         isTrashView={view === 'trash'}
+        isFilesView={view === 'files'}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
@@ -698,6 +712,11 @@ export default function AdminDashboard() {
           {/* Media Library Section */}
           {view === 'media' && (
             <MediaLibrary />
+          )}
+
+          {/* Files Library Section */}
+          {view === 'files' && (
+            <FilesLibrary onBack={handleBack} />
           )}
 
           {view === 'invitations' && user?.role === 'super_admin' && (

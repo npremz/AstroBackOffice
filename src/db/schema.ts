@@ -78,6 +78,18 @@ export const media = sqliteTable('media', {
   uploadedAt: integer('uploaded_at', { mode: 'timestamp' }).notNull(),
 });
 
+// Files Library (Documents: PDF, Word, Excel, etc.)
+export const files = sqliteTable('files', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  filename: text('filename').notNull(),
+  originalName: text('original_name').notNull(),
+  url: text('url').notNull(),
+  mimeType: text('mime_type').notNull(),
+  size: integer('size').notNull(), // in bytes
+  description: text('description'),
+  uploadedAt: integer('uploaded_at', { mode: 'timestamp' }).notNull(),
+});
+
 // Users (Admin accounts)
 export const users = sqliteTable('users', {
   id: integer('id').primaryKey({ autoIncrement: true }),

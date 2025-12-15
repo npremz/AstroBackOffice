@@ -36,6 +36,7 @@ const FIELD_TYPES = [
   { value: 'number', label: 'Number' },
   { value: 'richtext', label: 'Rich Text (HTML)' },
   { value: 'image', label: 'Image URL' },
+  { value: 'document', label: 'Document (PDF, Word, etc.)' },
 ];
 
 export default function CollectionEditor({ collection, onBack, onSaveSuccess }: Props) {

@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import RichTextEditor from './RichTextEditor';
 import MediaPicker from './MediaPicker';
+import DocumentPicker from './DocumentPicker';
 import { apiPut } from '@/lib/api-client';
 
 interface SingleType {
@@ -37,6 +38,8 @@ export default function SingleTypeContentEditor({ singleType, onBack, onSaveSucc
   const [error, setError] = useState('');
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [currentImageField, setCurrentImageField] = useState<string | null>(null);
+  const [documentPickerOpen, setDocumentPickerOpen] = useState(false);
+  const [currentDocumentField, setCurrentDocumentField] = useState<string | null>(null);
 
   useEffect(() => {
     setFormData(singleType.data || {});
@@ -178,6 +181,52 @@ export default function SingleTypeContentEditor({ singleType, onBack, onSaveSucc
             )}
             <p className="text-xs text-muted-foreground font-medium tracking-wide">
               Enter an image URL or select from media library
+            </p>
+          </div>
+        );
+
+      case 'document':
+        return (
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                id={`field-${field.key}`}
+                value={value}
+                onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                placeholder="/files/document.pdf or https://..."
+                required={field.required}
+                className="flex-1 h-11 text-base"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  setCurrentDocumentField(field.key);
+                  setDocumentPickerOpen(true);
+                }}
+                title="Select from files library"
+                className="h-11 w-11"
+              >
+                <FileText className="h-4 w-4" />
+              </Button>
+            </div>
+            {value && (
+              <div className="rounded-xl border border-border/50 p-3 bg-gradient-to-br from-muted/20 to-background">
+                <a
+                  href={value}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-primary hover:underline"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span className="truncate">{value.split('/').pop()}</span>
+                </a>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground font-medium tracking-wide">
+              Enter a document URL or select from files library
             </p>
           </div>
         );
@@ -368,6 +417,18 @@ export default function SingleTypeContentEditor({ singleType, onBack, onSaveSucc
           }
         }}
         currentValue={currentImageField ? formData[currentImageField] : ''}
+      />
+
+      {/* Document Picker Dialog */}
+      <DocumentPicker
+        open={documentPickerOpen}
+        onOpenChange={setDocumentPickerOpen}
+        onSelect={(url) => {
+          if (currentDocumentField) {
+            handleFieldChange(currentDocumentField, url);
+          }
+        }}
+        currentValue={currentDocumentField ? formData[currentDocumentField] : ''}
       />
     </div>
   );
