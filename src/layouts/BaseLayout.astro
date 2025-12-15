@@ -1,15 +1,36 @@
 ---
 import '../styles/global.css';
+import type { SeoMetadata } from '@/db/schema';
 
 interface Props {
   title?: string;
   description?: string;
+  seo?: SeoMetadata;
+  slug?: string;
 }
 
 const {
   title = 'Custom CMS',
-  description = 'High-performance CMS built with Astro and SQLite'
+  description = 'High-performance CMS built with Astro and SQLite',
+  seo,
+  slug
 } = Astro.props;
+
+// SEO values with fallbacks
+const metaTitle = seo?.metaTitle || title;
+const metaDescription = seo?.metaDescription || description;
+const ogTitle = seo?.ogTitle || metaTitle;
+const ogDescription = seo?.ogDescription || metaDescription;
+const ogImage = seo?.ogImage;
+const canonicalUrl = seo?.canonicalUrl || (slug ? new URL(slug, Astro.site || Astro.url.origin).href : undefined);
+const noIndex = seo?.noIndex || false;
+const noFollow = seo?.noFollow || false;
+
+// Build robots meta content
+const robotsContent = [
+  noIndex ? 'noindex' : 'index',
+  noFollow ? 'nofollow' : 'follow'
+].join(', ');
 ---
 
 <!DOCTYPE html>
@@ -18,12 +39,30 @@ const {
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
-    <meta name="description" content={description} />
+    <meta name="description" content={metaDescription} />
+    <meta name="robots" content={robotsContent} />
     <meta name="generator" content={Astro.generator} />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={ogTitle} />
+    <meta property="og:description" content={ogDescription} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:title" content={ogTitle} />
+    <meta name="twitter:description" content={ogDescription} />
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
+    
+    <!-- Canonical URL -->
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
-    <title>{title}</title>
+    <title>{metaTitle}</title>
   </head>
   <body class="font-montserrat">
     <slot />

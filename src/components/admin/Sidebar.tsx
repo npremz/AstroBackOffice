@@ -1,4 +1,4 @@
-import { Layers, Package, Plus, ChevronRight, Menu, X, Mail, Home, Image, Users, LogOut, History } from 'lucide-react';
+import { Layers, Package, Plus, ChevronRight, Menu, X, Mail, Home, Image, Users, LogOut, History, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -42,10 +42,12 @@ interface Props {
   onNavigateToInvitations?: () => void;
   onNavigateToUsers?: () => void;
   onNavigateToAuditLogs?: () => void;
+  onNavigateToTrash?: () => void;
   showInvitations?: boolean;
   isInvitationsView?: boolean;
   isUsersView?: boolean;
   isAuditLogsView?: boolean;
+  isTrashView?: boolean;
   isOpen: boolean;
   onToggle: () => void;
 }
@@ -65,10 +67,12 @@ export default function Sidebar({
   onNavigateToInvitations,
   onNavigateToUsers,
   onNavigateToAuditLogs,
+  onNavigateToTrash,
   showInvitations,
   isInvitationsView,
   isUsersView,
   isAuditLogsView,
+  isTrashView,
   isOpen,
   onToggle
 }: Props) {
@@ -265,6 +269,42 @@ export default function Sidebar({
                 </button>
               </div>
             </div>
+
+            {/* Trash - accessible to all users */}
+            {onNavigateToTrash && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                      Corbeille
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <button
+                    onClick={() => {
+                      onNavigateToTrash();
+                      if (window.innerWidth < 1024) onToggle();
+                    }}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                      "hover:bg-destructive/10 hover:text-destructive",
+                      isTrashView
+                        ? "bg-destructive/10 text-destructive border-l-2 border-destructive"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    <ChevronRight className={cn(
+                      "h-4 w-4 transition-transform duration-200",
+                      isTrashView && "rotate-90"
+                    )} />
+                    <span>Éléments supprimés</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {showInvitations && (
               <div className="space-y-2">

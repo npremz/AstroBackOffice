@@ -14,6 +14,7 @@ import MediaLibrary from './MediaLibrary';
 import Invitations from './Invitations';
 import Users from './Users';
 import AuditLogs from './AuditLogs';
+import TrashList from './TrashList';
 import { initCsrf } from '@/lib/api-client';
 
 interface Collection {
@@ -50,7 +51,7 @@ interface SingleType {
   updatedAt: Date;
 }
 
-type ViewType = 'dashboard' | 'collections' | 'collection-editor' | 'entries' | 'entry-editor' | 'single' | 'single-schema-editor' | 'single-content-editor' | 'media' | 'invitations' | 'users' | 'audit-logs';
+type ViewType = 'dashboard' | 'collections' | 'collection-editor' | 'entries' | 'entry-editor' | 'single' | 'single-schema-editor' | 'single-content-editor' | 'media' | 'invitations' | 'users' | 'audit-logs' | 'trash';
 type Section = 'collections' | 'single' | 'media' | 'admin';
 
 interface User {
@@ -401,7 +402,17 @@ export default function AdminDashboard() {
       setView('dashboard');
       setActiveSection('collections');
       updateURL('dashboard');
+    } else if (view === 'trash') {
+      setView('dashboard');
+      setActiveSection('collections');
+      updateURL('dashboard');
     }
+  };
+
+  // Trash navigation handler
+  const handleOpenTrash = () => {
+    setView('trash');
+    updateURL('trash', 'admin');
   };
 
   // Section switcher
@@ -494,6 +505,11 @@ export default function AdminDashboard() {
       return breadcrumbs;
     }
 
+    if (view === 'trash') {
+      breadcrumbs.push({ label: 'Trash' });
+      return breadcrumbs;
+    }
+
     if (activeSection === 'media') {
       breadcrumbs.push({ label: 'Media Library' });
       return breadcrumbs;
@@ -577,10 +593,12 @@ export default function AdminDashboard() {
         onNavigateToInvitations={handleNavigateToInvitations}
         onNavigateToUsers={handleNavigateToUsers}
         onNavigateToAuditLogs={handleNavigateToAuditLogs}
+        onNavigateToTrash={handleOpenTrash}
         showInvitations={user?.role === 'super_admin'}
         isInvitationsView={view === 'invitations'}
         isUsersView={view === 'users'}
         isAuditLogsView={view === 'audit-logs'}
+        isTrashView={view === 'trash'}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
@@ -605,7 +623,13 @@ export default function AdminDashboard() {
               singleTypes={singleTypes}
               onNavigateToCollections={handleNavigateToCollections}
               onNavigateToSingleTypes={handleNavigateToSingleTypes}
+              onNavigateToTrash={handleOpenTrash}
             />
+          )}
+
+          {/* Trash */}
+          {view === 'trash' && (
+            <TrashList onBack={handleBack} />
           )}
 
           {/* Collections Section */}

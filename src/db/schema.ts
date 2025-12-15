@@ -12,6 +12,18 @@ export const collections = sqliteTable('collections', {
   }>>(),
 });
 
+// SEO metadata type
+export interface SeoMetadata {
+  metaTitle?: string;
+  metaDescription?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  canonicalUrl?: string;
+  noIndex?: boolean;
+  noFollow?: boolean;
+}
+
 // Production Content (Publicly visible)
 export const entries = sqliteTable('entries', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -20,6 +32,12 @@ export const entries = sqliteTable('entries', {
   data: text('data', { mode: 'json' }).notNull().$type<Record<string, any>>(),
   template: text('template').notNull(),
   publishedAt: integer('published_at', { mode: 'timestamp' }).notNull(),
+  // SEO fields
+  seo: text('seo', { mode: 'json' }).$type<SeoMetadata>(),
+  // Soft delete
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+  // Scheduled publishing - if set, entry won't be visible until this date
+  scheduledAt: integer('scheduled_at', { mode: 'timestamp' }),
 });
 
 // Drafts & History (Admin workspace)

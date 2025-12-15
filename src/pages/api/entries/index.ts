@@ -1,27 +1,38 @@
 import type { APIRoute } from 'astro';
 import { db } from '../../../db';
 import { entries, collections } from '../../../db/schema';
-import { eq, sql } from 'drizzle-orm';
-import { createEntrySchema, validateBody, validationError, sanitizeEntryData } from '@/lib/validation';
+import { eq, sql, isNull, and } from 'drizzle-orm';
+import { createEntrySchema, validateBody, validationError, sanitizeEntryData, sanitizeSeoMetadata } from '@/lib/validation';
 import { parsePaginationParams, getOffset, paginatedResponse } from '@/lib/pagination';
 import { requireAuth } from '@/lib/auth';
 import { logAudit, createAuditContext } from '@/lib/audit';
 
 // GET all entries or entries by collection (with pagination)
+// Excludes soft-deleted entries by default
 export const GET: APIRoute = async ({ url }) => {
   try {
     const collectionId = url.searchParams.get('collectionId');
+    const includeDeleted = url.searchParams.get('includeDeleted') === 'true';
     const pagination = parsePaginationParams(url);
     const offset = getOffset(pagination);
 
-    let whereClause = undefined;
+    // Build where conditions
+    const conditions = [];
+    
+    // Exclude soft-deleted entries unless explicitly requested
+    if (!includeDeleted) {
+      conditions.push(isNull(entries.deletedAt));
+    }
+    
     if (collectionId) {
       const parsed = parseInt(collectionId);
       if (isNaN(parsed) || parsed < 1) {
         return validationError('Invalid collectionId');
       }
-      whereClause = eq(entries.collectionId, parsed);
+      conditions.push(eq(entries.collectionId, parsed));
     }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     // Get total count
     const countQuery = db.select({ count: sql<number>`count(*)` }).from(entries);
@@ -65,7 +76,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return validationError(validation.error);
     }
 
-    const { collectionId, slug, data, template } = validation.data;
+    const { collectionId, slug, data, template, seo, scheduledAt } = validation.data;
 
     // Get collection schema to sanitize data
     const [collection] = await db.select().from(collections).where(eq(collections.id, collectionId));
@@ -75,13 +86,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // Sanitize entry data based on schema
     const sanitizedData = sanitizeEntryData(data as Record<string, unknown>, collection.schema);
+    const sanitizedSeo = sanitizeSeoMetadata(seo);
+
+    // Parse scheduled date if provided
+    const scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
 
     const [newEntry] = await db.insert(entries).values({
       collectionId,
       slug,
       data: sanitizedData,
       template,
-      publishedAt: new Date()
+      seo: sanitizedSeo,
+      publishedAt: new Date(),
+      scheduledAt: scheduledDate
     }).returning();
 
     await logAudit(auditContext, {
@@ -89,7 +106,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       resourceType: 'Entry',
       resourceId: newEntry.id,
       resourceName: slug,
-      changes: { after: { slug, template, data: sanitizedData, collectionId } },
+      changes: { after: { slug, template, data: sanitizedData, seo: sanitizedSeo, scheduledAt: scheduledDate, collectionId } },
     });
 
     return new Response(JSON.stringify(newEntry), {

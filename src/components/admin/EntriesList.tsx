@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, FileText, Edit, Trash2, ChevronLeft, ExternalLink, Loader2, Settings } from 'lucide-react';
+import { Plus, FileText, Edit, Trash2, ChevronLeft, ExternalLink, Loader2, Settings, RotateCcw, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { apiDelete } from '@/lib/api-client';
+import { apiDelete, apiPost } from '@/lib/api-client';
 import EntriesSearch, { type SearchFilters } from './EntriesSearch';
 
 interface Collection {
@@ -28,11 +28,14 @@ interface Entry {
   data: Record<string, any>;
   template: string;
   publishedAt: Date;
+  deletedAt?: Date | null;
+  scheduledAt?: Date | null;
 }
 
 interface EntryWithDraft extends Entry {
   hasDraft?: boolean;
   isPublished?: boolean;
+  isScheduled?: boolean;
 }
 
 interface Props {
@@ -100,6 +103,7 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
     const entriesWithDraftStatus = await Promise.all(
       data.map(async (entry) => {
         const isPublished = new Date(entry.publishedAt).getTime() > 0;
+        const isScheduled = entry.scheduledAt && new Date(entry.scheduledAt) > new Date();
         let hasDraft = false;
 
         // Check if there's a draft for this entry
@@ -110,7 +114,7 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
           hasDraft = false;
         }
 
-        return { ...entry, hasDraft, isPublished };
+        return { ...entry, hasDraft, isPublished, isScheduled };
       })
     );
 
@@ -132,10 +136,11 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
 
     setDeleting(true);
     try {
+      // Soft delete - moves to trash
       await apiDelete(`/api/entries/${entryToDelete.id}`);
 
-      toast.success('Entry deleted successfully!', {
-        description: `"${entryToDelete.data.title || entryToDelete.slug}" has been removed.`,
+      toast.success('Entry moved to trash', {
+        description: `"${entryToDelete.data.title || entryToDelete.slug}" can be restored from the trash.`,
       });
 
       fetchEntries();
@@ -158,7 +163,18 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
     });
   };
 
+  const formatScheduledDate = (date: Date) => {
+    return new Date(date).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const publishedCount = entries.filter(e => e.isPublished).length;
+  const scheduledCount = entries.filter(e => e.isScheduled).length;
   const draftCount = entries.filter(e => e.hasDraft).length;
 
   return (
@@ -277,12 +293,18 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
                             Draft
                           </Badge>
                         )}
-                        {entry.isPublished && (
+                        {entry.isScheduled && entry.scheduledAt && (
+                          <Badge variant="secondary" className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/20 px-3 py-1 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            Scheduled: {formatScheduledDate(entry.scheduledAt)}
+                          </Badge>
+                        )}
+                        {entry.isPublished && !entry.isScheduled && (
                           <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-600 border-green-500/20 px-3 py-1">
                             Published
                           </Badge>
                         )}
-                        {entry.publishedAt && entry.isPublished && (
+                        {entry.publishedAt && entry.isPublished && !entry.isScheduled && (
                           <span className="text-xs font-medium text-muted-foreground tracking-wide">
                             {formatDate(entry.publishedAt)}
                           </span>
@@ -386,6 +408,10 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
                       <span className="text-sm font-medium text-muted-foreground">Published</span>
                       <span className="text-2xl font-bold text-green-600">{publishedCount}</span>
                     </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-blue-500/5 to-background border border-blue-500/20">
+                      <span className="text-sm font-medium text-muted-foreground">Scheduled</span>
+                      <span className="text-2xl font-bold text-blue-600">{scheduledCount}</span>
+                    </div>
                     <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-amber-500/5 to-background border border-amber-500/20">
                       <span className="text-sm font-medium text-muted-foreground">Drafts</span>
                       <span className="text-2xl font-bold text-amber-600">{draftCount}</span>
@@ -439,10 +465,10 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-serif text-2xl">Delete Entry</DialogTitle>
+            <DialogTitle className="text-2xl font-bold">Move to Trash</DialogTitle>
             <DialogDescription className="text-base leading-relaxed pt-2">
-              Are you sure you want to delete "<span className="font-semibold text-foreground">{entryToDelete?.data.title || entryToDelete?.slug}</span>"?
-              This action cannot be undone.
+              Are you sure you want to move "<span className="font-semibold text-foreground">{entryToDelete?.data.title || entryToDelete?.slug}</span>" to the trash?
+              You can restore it later from the trash.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-3 sm:gap-2">
@@ -461,7 +487,8 @@ export default function EntriesList({ collection, onBack, onCreate, onEdit, onEd
               className="shadow-md hover:shadow-lg transition-all duration-200"
             >
               {deleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              <span className="font-semibold">Delete</span>
+              <Trash2 className="h-4 w-4 mr-2" />
+              <span className="font-semibold">Move to Trash</span>
             </Button>
           </DialogFooter>
         </DialogContent>

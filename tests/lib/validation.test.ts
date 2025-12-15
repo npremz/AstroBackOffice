@@ -8,6 +8,8 @@ import {
   sanitizeEntryData,
   createCollectionSchema,
   createEntrySchema,
+  seoMetadataSchema,
+  sanitizeSeoMetadata,
 } from '@/lib/validation';
 
 describe('validation', () => {
@@ -390,6 +392,223 @@ describe('validation', () => {
       const result = sanitizeEntryData({ title: 12345, description: { nested: 'object' } }, schema);
       expect(result.title).toBe('');
       expect(result.description).toBe('');
+    });
+  });
+
+  describe('seoMetadataSchema', () => {
+    it('should accept valid SEO metadata', () => {
+      const seo = {
+        metaTitle: 'My Page Title',
+        metaDescription: 'A short description of my page',
+        ogTitle: 'OG Title',
+        ogDescription: 'OG Description',
+        ogImage: 'https://example.com/image.jpg',
+        canonicalUrl: 'https://example.com/page',
+        noIndex: false,
+        noFollow: false,
+      };
+      expect(seoMetadataSchema.safeParse(seo).success).toBe(true);
+    });
+
+    it('should accept partial SEO metadata', () => {
+      expect(seoMetadataSchema.safeParse({ metaTitle: 'Title' }).success).toBe(true);
+      expect(seoMetadataSchema.safeParse({ noIndex: true }).success).toBe(true);
+      expect(seoMetadataSchema.safeParse({}).success).toBe(true);
+    });
+
+    it('should accept undefined', () => {
+      expect(seoMetadataSchema.safeParse(undefined).success).toBe(true);
+    });
+
+    it('should enforce metaTitle max length', () => {
+      const seo = { metaTitle: 'a'.repeat(71) };
+      expect(seoMetadataSchema.safeParse(seo).success).toBe(false);
+      
+      const validSeo = { metaTitle: 'a'.repeat(70) };
+      expect(seoMetadataSchema.safeParse(validSeo).success).toBe(true);
+    });
+
+    it('should enforce metaDescription max length', () => {
+      const seo = { metaDescription: 'a'.repeat(161) };
+      expect(seoMetadataSchema.safeParse(seo).success).toBe(false);
+      
+      const validSeo = { metaDescription: 'a'.repeat(160) };
+      expect(seoMetadataSchema.safeParse(validSeo).success).toBe(true);
+    });
+
+    it('should enforce ogTitle max length', () => {
+      const seo = { ogTitle: 'a'.repeat(71) };
+      expect(seoMetadataSchema.safeParse(seo).success).toBe(false);
+    });
+
+    it('should enforce ogDescription max length', () => {
+      const seo = { ogDescription: 'a'.repeat(201) };
+      expect(seoMetadataSchema.safeParse(seo).success).toBe(false);
+    });
+
+    it('should validate ogImage as URL', () => {
+      expect(seoMetadataSchema.safeParse({ ogImage: 'https://example.com/image.jpg' }).success).toBe(true);
+      expect(seoMetadataSchema.safeParse({ ogImage: 'http://example.com/image.jpg' }).success).toBe(true);
+      expect(seoMetadataSchema.safeParse({ ogImage: '' }).success).toBe(true); // empty string allowed
+      expect(seoMetadataSchema.safeParse({ ogImage: 'not-a-url' }).success).toBe(false);
+      expect(seoMetadataSchema.safeParse({ ogImage: 'ftp://example.com/image.jpg' }).success).toBe(false);
+    });
+
+    it('should validate canonicalUrl as URL', () => {
+      expect(seoMetadataSchema.safeParse({ canonicalUrl: 'https://example.com/page' }).success).toBe(true);
+      expect(seoMetadataSchema.safeParse({ canonicalUrl: '' }).success).toBe(true);
+      expect(seoMetadataSchema.safeParse({ canonicalUrl: 'not-a-url' }).success).toBe(false);
+    });
+
+    it('should validate noIndex as boolean', () => {
+      expect(seoMetadataSchema.safeParse({ noIndex: true }).success).toBe(true);
+      expect(seoMetadataSchema.safeParse({ noIndex: false }).success).toBe(true);
+      expect(seoMetadataSchema.safeParse({ noIndex: 'true' }).success).toBe(false);
+      expect(seoMetadataSchema.safeParse({ noIndex: 1 }).success).toBe(false);
+    });
+
+    it('should validate noFollow as boolean', () => {
+      expect(seoMetadataSchema.safeParse({ noFollow: true }).success).toBe(true);
+      expect(seoMetadataSchema.safeParse({ noFollow: false }).success).toBe(true);
+      expect(seoMetadataSchema.safeParse({ noFollow: 'false' }).success).toBe(false);
+    });
+
+    it('should reject unknown fields (strict mode)', () => {
+      const seo = { metaTitle: 'Title', unknownField: 'value' };
+      expect(seoMetadataSchema.safeParse(seo).success).toBe(false);
+    });
+  });
+
+  describe('sanitizeSeoMetadata', () => {
+    it('should return undefined for undefined input', () => {
+      expect(sanitizeSeoMetadata(undefined)).toBeUndefined();
+    });
+
+    it('should return undefined for empty object', () => {
+      expect(sanitizeSeoMetadata({})).toBeUndefined();
+    });
+
+    it('should strip HTML from text fields', () => {
+      const seo = {
+        metaTitle: '<script>alert("xss")</script>My Title',
+        metaDescription: '<b>Bold</b> description',
+        ogTitle: '<img src=x onerror=alert(1)>OG Title',
+        ogDescription: '<a href="evil">Link</a> text',
+      };
+      const result = sanitizeSeoMetadata(seo);
+      expect(result?.metaTitle).toBe('My Title');
+      expect(result?.metaDescription).toBe('Bold description');
+      expect(result?.ogTitle).toBe('OG Title');
+      expect(result?.ogDescription).toBe('Link text');
+    });
+
+    it('should enforce length limits', () => {
+      const seo = {
+        metaTitle: 'a'.repeat(100),
+        metaDescription: 'b'.repeat(200),
+        ogTitle: 'c'.repeat(100),
+        ogDescription: 'd'.repeat(300),
+      };
+      const result = sanitizeSeoMetadata(seo);
+      expect(result?.metaTitle?.length).toBe(70);
+      expect(result?.metaDescription?.length).toBe(160);
+      expect(result?.ogTitle?.length).toBe(70);
+      expect(result?.ogDescription?.length).toBe(200);
+    });
+
+    it('should validate and preserve valid URLs', () => {
+      const seo = {
+        ogImage: 'https://example.com/image.jpg',
+        canonicalUrl: 'https://example.com/page',
+      };
+      const result = sanitizeSeoMetadata(seo);
+      expect(result?.ogImage).toBe('https://example.com/image.jpg');
+      expect(result?.canonicalUrl).toBe('https://example.com/page');
+    });
+
+    it('should reject invalid URLs', () => {
+      const seo = {
+        ogImage: 'not-a-url',
+        canonicalUrl: 'javascript:alert(1)',
+      };
+      const result = sanitizeSeoMetadata(seo);
+      expect(result?.ogImage).toBeUndefined();
+      expect(result?.canonicalUrl).toBeUndefined();
+    });
+
+    it('should reject non-http(s) URLs', () => {
+      const seo = {
+        ogImage: 'ftp://example.com/image.jpg',
+        canonicalUrl: 'file:///etc/passwd',
+      };
+      const result = sanitizeSeoMetadata(seo);
+      expect(result?.ogImage).toBeUndefined();
+      expect(result?.canonicalUrl).toBeUndefined();
+    });
+
+    it('should preserve boolean values', () => {
+      const seo = { noIndex: true, noFollow: false };
+      const result = sanitizeSeoMetadata(seo);
+      expect(result?.noIndex).toBe(true);
+      expect(result?.noFollow).toBe(false);
+    });
+
+    it('should handle mixed valid and invalid fields', () => {
+      const seo = {
+        metaTitle: 'Valid Title',
+        ogImage: 'invalid-url',
+        noIndex: true,
+      };
+      const result = sanitizeSeoMetadata(seo);
+      expect(result?.metaTitle).toBe('Valid Title');
+      expect(result?.ogImage).toBeUndefined();
+      expect(result?.noIndex).toBe(true);
+    });
+
+    it('should truncate long URLs', () => {
+      const longUrl = 'https://example.com/' + 'a'.repeat(600);
+      const seo = { ogImage: longUrl };
+      const result = sanitizeSeoMetadata(seo);
+      expect(result?.ogImage?.length).toBeLessThanOrEqual(500);
+    });
+  });
+
+  describe('createEntrySchema with SEO', () => {
+    it('should accept entry with valid SEO metadata', () => {
+      const entry = {
+        collectionId: 1,
+        slug: 'my-entry',
+        data: { title: 'Test' },
+        template: 'BaseLayout',
+        seo: {
+          metaTitle: 'My SEO Title',
+          metaDescription: 'SEO Description',
+        },
+      };
+      expect(createEntrySchema.safeParse(entry).success).toBe(true);
+    });
+
+    it('should accept entry without SEO metadata', () => {
+      const entry = {
+        collectionId: 1,
+        slug: 'my-entry',
+        data: { title: 'Test' },
+        template: 'BaseLayout',
+      };
+      expect(createEntrySchema.safeParse(entry).success).toBe(true);
+    });
+
+    it('should reject entry with invalid SEO metadata', () => {
+      const entry = {
+        collectionId: 1,
+        slug: 'my-entry',
+        data: { title: 'Test' },
+        template: 'BaseLayout',
+        seo: {
+          metaTitle: 'a'.repeat(100), // too long
+        },
+      };
+      expect(createEntrySchema.safeParse(entry).success).toBe(false);
     });
   });
 });

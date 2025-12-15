@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { db } from '../../../db';
 import { entries, revisions, collections } from '../../../db/schema';
 import { eq } from 'drizzle-orm';
-import { updateEntrySchema, validateBody, validationError, sanitizeEntryData } from '@/lib/validation';
+import { updateEntrySchema, validateBody, validationError, sanitizeEntryData, sanitizeSeoMetadata } from '@/lib/validation';
 import { requireAuth } from '@/lib/auth';
 import { logAudit, createAuditContext, computeChanges } from '@/lib/audit';
 
@@ -54,7 +54,7 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
       return validationError(validation.error);
     }
 
-    const { data, slug, template } = validation.data;
+    const { data, slug, template, seo } = validation.data;
 
     // Get current entry and its collection
     const [currentEntry] = await db.select().from(entries).where(eq(entries.id, id));
@@ -81,12 +81,16 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
       ? sanitizeEntryData(data as Record<string, unknown>, collection.schema)
       : currentEntry.data;
 
+    // Sanitize SEO metadata
+    const sanitizedSeo = seo !== undefined ? sanitizeSeoMetadata(seo) : currentEntry.seo;
+
     // Update entry
     const [updatedEntry] = await db.update(entries)
       .set({
         data: sanitizedData,
         slug: slug ?? currentEntry.slug,
         template: template ?? currentEntry.template,
+        seo: sanitizedSeo,
         publishedAt: new Date()
       })
       .where(eq(entries.id, id))
@@ -98,8 +102,8 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
       resourceId: id,
       resourceName: updatedEntry.slug,
       changes: computeChanges(
-        { slug: currentEntry.slug, template: currentEntry.template, data: currentEntry.data },
-        { slug: updatedEntry.slug, template: updatedEntry.template, data: updatedEntry.data }
+        { slug: currentEntry.slug, template: currentEntry.template, data: currentEntry.data, seo: currentEntry.seo },
+        { slug: updatedEntry.slug, template: updatedEntry.template, data: updatedEntry.data, seo: updatedEntry.seo }
       ),
     });
 
@@ -123,13 +127,14 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
   }
 };
 
-// DELETE entry
-export const DELETE: APIRoute = async ({ params, request, cookies }) => {
+// DELETE entry (soft delete - moves to trash)
+export const DELETE: APIRoute = async ({ params, request, cookies, url }) => {
   const auth = await requireAuth(cookies);
   if ('response' in auth) return auth.response;
 
   const auditContext = createAuditContext(auth.user, request);
   const id = parseInt(params.id!);
+  const permanent = url.searchParams.get('permanent') === 'true';
 
   try {
     if (isNaN(id) || id < 1) {
@@ -145,24 +150,48 @@ export const DELETE: APIRoute = async ({ params, request, cookies }) => {
       });
     }
 
-    // Delete revisions first (cascade)
-    await db.delete(revisions).where(eq(revisions.entryId, id));
+    if (permanent) {
+      // Permanent delete - remove from database completely
+      // Delete revisions first (cascade)
+      await db.delete(revisions).where(eq(revisions.entryId, id));
+      // Then delete the entry
+      await db.delete(entries).where(eq(entries.id, id));
 
-    // Then delete the entry
-    await db.delete(entries).where(eq(entries.id, id));
+      await logAudit(auditContext, {
+        action: 'DELETE',
+        resourceType: 'Entry',
+        resourceId: id,
+        resourceName: entry.slug,
+        changes: { before: { slug: entry.slug, template: entry.template, data: entry.data, seo: entry.seo } },
+      });
 
-    await logAudit(auditContext, {
-      action: 'DELETE',
-      resourceType: 'Entry',
-      resourceId: id,
-      resourceName: entry.slug,
-      changes: { before: { slug: entry.slug, template: entry.template, data: entry.data } },
-    });
+      return new Response(JSON.stringify({ success: true, permanent: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } else {
+      // Soft delete - set deletedAt timestamp
+      const [deletedEntry] = await db.update(entries)
+        .set({ deletedAt: new Date() })
+        .where(eq(entries.id, id))
+        .returning();
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+      await logAudit(auditContext, {
+        action: 'DELETE',
+        resourceType: 'Entry',
+        resourceId: id,
+        resourceName: entry.slug,
+        changes: { 
+          before: { deletedAt: null },
+          after: { deletedAt: deletedEntry.deletedAt }
+        },
+      });
+
+      return new Response(JSON.stringify({ success: true, permanent: false, deletedAt: deletedEntry.deletedAt }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
   } catch (error) {
     console.error('Delete entry error:', error);
     await logAudit(auditContext, {

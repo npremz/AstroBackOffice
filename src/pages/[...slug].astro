@@ -1,7 +1,7 @@
 ---
 import { db } from '../db';
 import { entries } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and, isNull, or, lte } from 'drizzle-orm';
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 // Get the slug from the URL
@@ -9,9 +9,21 @@ const { slug } = Astro.params;
 const fullSlug = slug || '';
 
 // Try to find the entry in the database
-const [entry] = await db.select().from(entries).where(eq(entries.slug, fullSlug));
+// Exclude soft-deleted and entries scheduled for future
+const now = new Date();
+const [entry] = await db.select().from(entries).where(
+  and(
+    eq(entries.slug, fullSlug),
+    isNull(entries.deletedAt),
+    // Entry is visible if: no scheduledAt OR scheduledAt <= now
+    or(
+      isNull(entries.scheduledAt),
+      lte(entries.scheduledAt, now)
+    )
+  )
+);
 
-// If no entry found, return 404
+// If no entry found, deleted, or not yet published, return 404
 if (!entry) {
   return Astro.redirect('/404');
 }
@@ -26,7 +38,7 @@ try {
   console.error(`Layout ${entry.template} not found, using default`);
 }
 
-// Extract common fields for meta
+// Extract common fields for meta (fallbacks if no SEO metadata)
 const title = entry.data.title || entry.slug;
 const description = entry.data.description || entry.data.content?.substring(0, 150) || '';
 ---
@@ -35,7 +47,7 @@ const description = entry.data.description || entry.data.content?.substring(0, 1
   <LayoutComponent entry={entry} />
 ) : (
   <!-- Default rendering if no specific layout -->
-  <BaseLayout title={title} description={description}>
+  <BaseLayout title={title} description={description} seo={entry.seo} slug={entry.slug}>
     <article class="max-w-4xl mx-auto px-4 py-16">
       <header class="mb-8">
         <h1 class="text-4xl font-bold text-gray-900 mb-4">{entry.data.title}</h1>

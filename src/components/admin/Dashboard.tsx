@@ -1,4 +1,4 @@
-import { Layers, Package, FileText, Mail, Sparkles, ArrowRight, Settings, Database } from 'lucide-react';
+import { Layers, Package, FileText, Mail, Sparkles, ArrowRight, Settings, Database, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,13 +21,15 @@ interface Props {
   singleTypes: SingleType[];
   onNavigateToCollections: () => void;
   onNavigateToSingleTypes: () => void;
+  onNavigateToTrash?: () => void;
 }
 
 export default function Dashboard({
   collections,
   singleTypes,
   onNavigateToCollections,
-  onNavigateToSingleTypes
+  onNavigateToSingleTypes,
+  onNavigateToTrash
 }: Props) {
   // Calculate total fields across all collections and single types
   const totalCollectionFields = collections.reduce((sum, col) => sum + col.schema.length, 0);
@@ -234,6 +236,32 @@ export default function Dashboard({
            </CardContent>
         </Card>
       </div>
+
+      {/* Trash Card */}
+      {onNavigateToTrash && (
+        <div className="stagger-fade-in stagger-4">
+          <Card className="card-float border-border/50 overflow-hidden group cursor-pointer hover:border-destructive/30" onClick={onNavigateToTrash}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-destructive/10 to-red-500/10 group-hover:from-destructive/20 group-hover:to-red-500/20 transition-all duration-300">
+                    <Trash2 className="h-6 w-6 text-destructive" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground group-hover:text-destructive transition-colors duration-200">
+                      Corbeille
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Gérez les éléments supprimés
+                    </p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-destructive group-hover:translate-x-1 transition-all duration-200" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Support Section */}
       <Card className="card-float border-border/50 overflow-hidden stagger-fade-in stagger-4">

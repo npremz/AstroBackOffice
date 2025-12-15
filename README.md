@@ -11,6 +11,9 @@ High-performance, schema-flexible CMS built with Astro and SQLite. Perfect for s
 - 🎭 **Dynamic layouts** - Custom design for each content type
 - 📝 **Revision history** - Automatic versioning of changes
 - 🔌 **REST API** - Full CRUD operations
+- 🔍 **SEO Metadata** - Meta title, description, OG tags, canonical URL, robots directives
+- 🗑️ **Soft Delete** - Trash with restore functionality
+- 📅 **Scheduled Publishing** - Schedule content for future publication
 
 ## 🚀 Quick Start
 
@@ -114,11 +117,15 @@ Pages are automatically generated from entries:
 - `DELETE /api/collections/[id]` - Delete collection
 
 ### Entries
-- `GET /api/entries?collectionId=X` - List entries
-- `POST /api/entries` - Create entry
+- `GET /api/entries?collectionId=X` - List entries (excludes deleted by default)
+- `GET /api/entries?includeDeleted=true` - Include soft-deleted entries
+- `POST /api/entries` - Create entry (supports `scheduledAt` for scheduling)
 - `GET /api/entries/[id]` - Get entry
 - `PUT /api/entries/[id]` - Update entry (auto-creates revision)
-- `DELETE /api/entries/[id]` - Delete entry
+- `DELETE /api/entries/[id]` - Soft delete entry (moves to trash)
+- `DELETE /api/entries/[id]?permanent=true` - Permanently delete entry
+- `POST /api/entries/[id]/restore` - Restore soft-deleted entry
+- `GET /api/entries/trash` - List all soft-deleted entries
 
 ## 📝 Creating Custom Layouts
 

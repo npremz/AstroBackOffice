@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { db } from '@/db';
 import { entries, revisions, collections } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { updateEntrySchema, validateBody, validationError, sanitizeEntryData } from '@/lib/validation';
+import { updateEntrySchema, validateBody, validationError, sanitizeEntryData, sanitizeSeoMetadata } from '@/lib/validation';
 import { requireAuth } from '@/lib/auth';
 import { logAudit, createAuditContext, computeChanges } from '@/lib/audit';
 
@@ -25,7 +25,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
       return validationError(validation.error);
     }
 
-    const { data, slug, template } = validation.data;
+    const { data, slug, template, seo } = validation.data;
 
     // Get the current entry
     const [currentEntry] = await db.select().from(entries).where(eq(entries.id, entryId));
@@ -45,6 +45,9 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
       ? sanitizeEntryData(data as Record<string, unknown>, collection.schema)
       : currentEntry.data;
 
+    // Sanitize SEO metadata
+    const sanitizedSeo = seo !== undefined ? sanitizeSeoMetadata(seo) : currentEntry.seo;
+
     // Archive current version if it's already published (not epoch time)
     if (currentEntry.publishedAt.getTime() > 0) {
       await db.insert(revisions).values({
@@ -61,6 +64,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
         data: sanitizedData,
         slug: slug ?? currentEntry.slug,
         template: template ?? currentEntry.template,
+        seo: sanitizedSeo,
         publishedAt: new Date()
       })
       .where(eq(entries.id, entryId))
@@ -79,8 +83,8 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
       resourceId: entryId,
       resourceName: publishedEntry.slug,
       changes: computeChanges(
-        { slug: currentEntry.slug, template: currentEntry.template, data: currentEntry.data },
-        { slug: publishedEntry.slug, template: publishedEntry.template, data: publishedEntry.data }
+        { slug: currentEntry.slug, template: currentEntry.template, data: currentEntry.data, seo: currentEntry.seo },
+        { slug: publishedEntry.slug, template: publishedEntry.template, data: publishedEntry.data, seo: publishedEntry.seo }
       ),
     });
 

@@ -29,18 +29,47 @@ export const createCollectionSchema = z.object({
 
 export const updateCollectionSchema = createCollectionSchema.partial();
 
+// SEO metadata schema
+// Custom refinement for http(s) URLs only
+const httpUrlSchema = z.string().url().max(500).refine(
+  (url) => {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  },
+  { message: 'URL must use http or https protocol' }
+);
+
+export const seoMetadataSchema = z.object({
+  metaTitle: z.string().max(70).optional(),
+  metaDescription: z.string().max(160).optional(),
+  ogTitle: z.string().max(70).optional(),
+  ogDescription: z.string().max(200).optional(),
+  ogImage: httpUrlSchema.optional().or(z.literal('')),
+  canonicalUrl: httpUrlSchema.optional().or(z.literal('')),
+  noIndex: z.boolean().optional(),
+  noFollow: z.boolean().optional(),
+}).strict().optional();
+
 // Entry schemas
 export const createEntrySchema = z.object({
   collectionId: z.number().int().positive(),
   slug: slugSchema,
   data: z.record(z.unknown()),
   template: templateSchema,
+  seo: seoMetadataSchema,
+  scheduledAt: z.string().datetime().optional().or(z.null()),
 });
 
 export const updateEntrySchema = z.object({
   data: z.record(z.unknown()).optional(),
   slug: slugSchema.optional(),
   template: templateSchema.optional(),
+  seo: seoMetadataSchema,
+  scheduledAt: z.string().datetime().optional().or(z.null()),
 });
 
 // Content module schemas
@@ -130,6 +159,75 @@ export function sanitizeEntryData(
   }
   
   return sanitized;
+}
+
+// SEO metadata type
+export interface SeoMetadata {
+  metaTitle?: string;
+  metaDescription?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  canonicalUrl?: string;
+  noIndex?: boolean;
+  noFollow?: boolean;
+}
+
+// Sanitize SEO metadata - strip HTML and enforce length limits
+export function sanitizeSeoMetadata(seo: z.infer<typeof seoMetadataSchema>): SeoMetadata | undefined {
+  if (!seo) return undefined;
+  
+  const sanitized: SeoMetadata = {};
+  
+  // Text fields - strip any HTML tags and enforce length limits
+  if (seo.metaTitle) {
+    sanitized.metaTitle = stripHtml(seo.metaTitle).slice(0, 70);
+  }
+  if (seo.metaDescription) {
+    sanitized.metaDescription = stripHtml(seo.metaDescription).slice(0, 160);
+  }
+  if (seo.ogTitle) {
+    sanitized.ogTitle = stripHtml(seo.ogTitle).slice(0, 70);
+  }
+  if (seo.ogDescription) {
+    sanitized.ogDescription = stripHtml(seo.ogDescription).slice(0, 200);
+  }
+  
+  // URL fields - validate and sanitize
+  if (seo.ogImage && isValidUrl(seo.ogImage)) {
+    sanitized.ogImage = seo.ogImage.slice(0, 500);
+  }
+  if (seo.canonicalUrl && isValidUrl(seo.canonicalUrl)) {
+    sanitized.canonicalUrl = seo.canonicalUrl.slice(0, 500);
+  }
+  
+  // Boolean fields
+  if (typeof seo.noIndex === 'boolean') {
+    sanitized.noIndex = seo.noIndex;
+  }
+  if (typeof seo.noFollow === 'boolean') {
+    sanitized.noFollow = seo.noFollow;
+  }
+  
+  return Object.keys(sanitized).length > 0 ? sanitized : undefined;
+}
+
+// Helper to strip HTML tags from string - returns only text content
+function stripHtml(str: string): string {
+  // Use DOMPurify to sanitize and get only text
+  // ALLOWED_TAGS: [] means no tags allowed, only text content
+  const textOnly = DOMPurify.sanitize(str, { ALLOWED_TAGS: [] });
+  return textOnly.trim();
+}
+
+// Helper to validate URL
+function isValidUrl(str: string): boolean {
+  try {
+    const url = new URL(str);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 // Validate and parse request body with Zod schema

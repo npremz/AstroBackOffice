@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { db } from '../../../db';
 import { entries, collections } from '../../../db/schema';
-import { eq, and, gte, lte, sql, like, or, desc, asc } from 'drizzle-orm';
+import { eq, and, gte, lte, sql, like, or, desc, asc, isNull } from 'drizzle-orm';
 import { parseSearchParams, buildSearchResponse, escapeFtsQuery, type SearchParams } from '@/lib/search';
 
 /**
@@ -85,6 +85,9 @@ export const GET: APIRoute = async ({ url }) => {
  */
 function buildWhereConditions(params: SearchParams) {
   const conditions = [];
+  
+  // Always exclude soft-deleted entries
+  conditions.push(isNull(entries.deletedAt));
   
   // Collection filter
   if (params.collectionId) {
