@@ -1,6 +1,13 @@
 import type { MiddlewareHandler } from 'astro';
 import { getSession } from '@/lib/auth';
 import { validateCsrf, csrfError, requiresCsrfValidation, generateCsrfToken, setCsrfCookie, getCsrfFromCookie } from '@/lib/csrf';
+import {
+  applySecurityHeaders,
+  getApiSecurityConfig,
+  getRelaxedSecurityConfig,
+  shouldRelaxSecurityHeaders,
+  DEFAULT_CONFIG,
+} from '@/lib/security-headers';
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
@@ -20,18 +27,24 @@ export const onRequest: MiddlewareHandler = async ({ url, cookies, request }, ne
       return next();
     }
 
-    const session = await getSession(cookies);
-    if (!session) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: jsonHeaders
-      });
-    }
+    // Allow GET /api/preview without auth (previewId is already a temporary token)
+    // POST still requires auth to prevent abuse
+    const isPreviewGet = pathname === '/api/preview' && request.method === 'GET';
 
-    // CSRF validation for state-changing methods
-    if (requiresCsrfValidation(request.method)) {
-      if (!validateCsrf(cookies, request)) {
-        return csrfError();
+    if (!isPreviewGet) {
+      const session = await getSession(cookies);
+      if (!session) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: jsonHeaders
+        });
+      }
+
+      // CSRF validation for state-changing methods
+      if (requiresCsrfValidation(request.method)) {
+        if (!validateCsrf(cookies, request)) {
+          return csrfError();
+        }
       }
     }
   }
@@ -46,5 +59,20 @@ export const onRequest: MiddlewareHandler = async ({ url, cookies, request }, ne
     }
   }
 
-  return next();
+  // Get the response from the next handler
+  const response = await next();
+
+  // Determine which security config to use based on the path
+  let securityConfig = DEFAULT_CONFIG;
+
+  if (pathname.startsWith('/api')) {
+    // API routes get stricter CSP (no scripts/styles needed)
+    securityConfig = getApiSecurityConfig();
+  } else if (shouldRelaxSecurityHeaders(pathname)) {
+    // Public assets get relaxed headers
+    securityConfig = getRelaxedSecurityConfig();
+  }
+
+  // Apply security headers to the response
+  return applySecurityHeaders(response, securityConfig);
 };
