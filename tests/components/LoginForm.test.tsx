@@ -220,6 +220,9 @@ describe('LoginForm', () => {
       const user = userEvent.setup();
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
+      // Suppress expected console.error from the component
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
       render(<LoginForm />);
       
       await user.type(screen.getByLabelText(/email/i), 'test@example.com');
@@ -229,6 +232,8 @@ describe('LoginForm', () => {
       await waitFor(() => {
         expect(screen.getByText(/impossible de se connecter/i)).toBeInTheDocument();
       });
+
+      consoleSpy.mockRestore();
     });
 
     it('should re-enable button after failed login', async () => {
