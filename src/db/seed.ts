@@ -1,104 +1,41 @@
 import 'dotenv/config';
 import { db } from './index';
-import { collections, entries, revisions, contentModules, media, files, invitations } from './schema';
-import { eq, sql } from 'drizzle-orm';
-import { createInvitation, normalizeEmail } from '@/lib/auth';
-
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const RESEND_FROM = process.env.RESEND_FROM || 'no-reply@hordeagence.com';
-const APP_URL = process.env.APP_URL || 'http://localhost:4321';
-
-async function sendSeedInvitationEmail(email: string, token: string) {
-  if (!RESEND_API_KEY) {
-    console.warn('⚠️  RESEND_API_KEY not set; email not sent. Use the token manually.');
-    return false;
-  }
-
-  const link = `${APP_URL}/accept-invitation?token=${token}`;
-
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: RESEND_FROM,
-        to: email,
-        subject: 'Votre invitation Super Admin - CMS BackOffice',
-        text: `Bienvenue ! Vous avez été invité en tant que Super Admin du CMS.\n\nAcceptez l'invitation ici : ${link}\n\nCe lien expire dans 7 jours.`,
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <style>
-              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0; text-align: center; }
-              .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
-              .button { display: inline-block; background: #667eea; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
-              .button:hover { background: #5a67d8; }
-              .footer { margin-top: 20px; font-size: 12px; color: #6b7280; }
-              .link { word-break: break-all; background: #e5e7eb; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <h1 style="margin:0;">🎉 Bienvenue sur le CMS</h1>
-                <p style="margin:10px 0 0 0; opacity: 0.9;">Vous êtes invité en tant que Super Admin</p>
-              </div>
-              <div class="content">
-                <p>Bonjour,</p>
-                <p>Votre compte <strong>Super Admin</strong> a été créé pour le CMS BackOffice. Cliquez sur le bouton ci-dessous pour définir votre mot de passe et activer votre compte.</p>
-                <p style="text-align: center;">
-                  <a href="${link}" class="button">Activer mon compte</a>
-                </p>
-                <p>Ou copiez ce lien dans votre navigateur :</p>
-                <p class="link">${link}</p>
-                <div class="footer">
-                  <p>⏰ Ce lien expire dans <strong>7 jours</strong>.</p>
-                  <p>Si vous n'avez pas demandé cette invitation, vous pouvez ignorer cet email.</p>
-                </div>
-              </div>
-            </div>
-          </body>
-          </html>
-        `,
-      }),
-    });
-
-    if (!response.ok) {
-      const body = await response.text();
-      console.error(`❌ Failed to send email: ${response.status} ${body}`);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error('❌ Error sending email:', error);
-    return false;
-  }
-}
+import { collections, entries, revisions, contentModules, media, files, users } from './schema';
+import { sql } from 'drizzle-orm';
+import { hashPassword, normalizeEmail } from '@/lib/auth';
 
 async function seed() {
   console.log('🌱 Seeding database...');
 
   // Clear existing tables (in correct order for foreign key constraints)
+  // Uses DELETE ... WHERE 1=1 pattern which succeeds even on empty/non-existent tables
   console.log('🗑️  Clearing existing data...');
   await db.run(sql`PRAGMA foreign_keys = OFF`);
-  await db.run(sql`DELETE FROM audit_logs`);
-  await db.run(sql`DELETE FROM sessions`);
-  await db.run(sql`DELETE FROM invitations`);
-  await db.run(sql`DELETE FROM users`);
-  await db.run(sql`DELETE FROM revisions`);
-  await db.run(sql`DELETE FROM entries`);
-  await db.run(sql`DELETE FROM collections`);
-  await db.run(sql`DELETE FROM content_modules`);
-  await db.run(sql`DELETE FROM media`);
-  await db.run(sql`DELETE FROM files`);
+
+  // Helper to safely delete from a table (no-op if table doesn't exist)
+  const safeDelete = async (tableName: string) => {
+    try {
+      await db.run(sql.raw(`DELETE FROM ${tableName}`));
+    } catch (e: unknown) {
+      // Table doesn't exist yet - that's fine, skip it
+      const error = e as Error;
+      if (!error.message?.includes('no such table')) {
+        throw e;
+      }
+    }
+  };
+
+  await safeDelete('audit_logs');
+  await safeDelete('sessions');
+  await safeDelete('invitations');
+  await safeDelete('users');
+  await safeDelete('revisions');
+  await safeDelete('entries');
+  await safeDelete('collections');
+  await safeDelete('content_modules');
+  await safeDelete('media');
+  await safeDelete('files');
+
   await db.run(sql`PRAGMA foreign_keys = ON`);
 
   // =====================
@@ -656,30 +593,34 @@ async function seed() {
   console.log('✅ File entries created');
 
   // =====================
-  // ADMIN INVITATION
+  // ADMIN USER
   // =====================
   const seedEmail = process.env.ADMIN_SEED_EMAIL;
-  if (seedEmail) {
+  const seedPassword = process.env.ADMIN_SEED_PASSWORD;
+
+  if (seedEmail && seedPassword) {
     const normalizedEmail = normalizeEmail(seedEmail);
-    await db.delete(invitations).where(eq(invitations.email, normalizedEmail));
-    const { token, invitation } = await createInvitation(normalizedEmail, 'super_admin');
-    
+    const now = new Date();
+
+    await db.insert(users).values({
+      email: normalizedEmail,
+      passwordHash: hashPassword(seedPassword),
+      name: 'Admin',
+      role: 'super_admin',
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
     console.log('');
-    console.log('🔐 Admin invitation created:');
+    console.log('🔐 Admin user created:');
     console.log(`   Email: ${normalizedEmail}`);
-    console.log(`   Role: Super Admin`);
-    console.log(`   Expires: ${new Date(invitation.expiresAt).toISOString()}`);
-    
-    // Send email with invitation
-    const emailSent = await sendSeedInvitationEmail(normalizedEmail, token);
-    if (emailSent) {
-      console.log(`   📧 Email sent successfully to ${normalizedEmail}`);
-    } else {
-      console.log(`   📋 Token (use manually): ${token}`);
-      console.log(`   🔗 Activation link: ${APP_URL}/accept-invitation?token=${token}`);
-    }
+    console.log(`   Password: (from ADMIN_SEED_PASSWORD)`);
+    console.log(`   Role: super_admin`);
   } else {
-    console.warn('⚠️  ADMIN_SEED_EMAIL not set; no admin invitation created.');
+    console.warn('');
+    console.warn('⚠️  ADMIN_SEED_EMAIL or ADMIN_SEED_PASSWORD not set; no admin user created.');
+    console.warn('   Set both in .env to create an admin user on seed.');
   }
 
   console.log('');
