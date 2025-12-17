@@ -11,6 +11,7 @@
     "db:migrate": "drizzle-kit push",
     "db:seed": "tsx src/db/seed.ts",
     "db:studio": "drizzle-kit studio",
+    "db:re": "rm -f data.db data.db-shm data.db-wal && npm run db:migrate 2>&1 && npm run db:seed",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage"
