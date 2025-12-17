@@ -128,8 +128,9 @@ export default function MediaLibrary() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Loading media library...</p>
+      <div className="flex items-center justify-center h-64 gap-3 text-muted-foreground">
+        <Upload className="h-5 w-5 animate-pulse text-primary" />
+        <span className="font-medium">Chargement de la bibliothèque média...</span>
       </div>
     );
   }

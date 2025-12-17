@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Toaster } from '@/components/ui/sonner';
+import { ErrorBoundary, ErrorFallback } from '@/components/ui/ErrorBoundary';
 import Sidebar from './Sidebar';
 import Breadcrumbs, { type BreadcrumbItem } from './Breadcrumbs';
 import Dashboard from './Dashboard';
@@ -632,104 +633,132 @@ export default function AdminDashboard() {
         <div className="px-4 pb-8 sm:px-6 lg:px-8 lg:pb-12 pt-28 lg:pt-32">
           {/* Dashboard */}
           {view === 'dashboard' && (
-            <Dashboard
-              collections={collections}
-              singleTypes={singleTypes}
-              onNavigateToCollections={handleNavigateToCollections}
-              onNavigateToSingleTypes={handleNavigateToSingleTypes}
-              onNavigateToTrash={handleOpenTrash}
-            />
+            <ErrorBoundary>
+              <Dashboard
+                collections={collections}
+                singleTypes={singleTypes}
+                onNavigateToCollections={handleNavigateToCollections}
+                onNavigateToSingleTypes={handleNavigateToSingleTypes}
+                onNavigateToTrash={handleOpenTrash}
+              />
+            </ErrorBoundary>
           )}
 
           {/* Trash */}
           {view === 'trash' && (
-            <TrashList onBack={handleBack} />
+            <ErrorBoundary>
+              <TrashList onBack={handleBack} />
+            </ErrorBoundary>
           )}
 
           {/* Collections Section */}
           {view === 'collections' && (
-            <CollectionsList
-              collections={collections}
-              onSelectCollection={handleSelectCollection}
-              onCreateCollection={handleCreateCollection}
-              onEditCollection={handleEditCollection}
-            />
+            <ErrorBoundary>
+              <CollectionsList
+                collections={collections}
+                onSelectCollection={handleSelectCollection}
+                onCreateCollection={handleCreateCollection}
+                onEditCollection={handleEditCollection}
+              />
+            </ErrorBoundary>
           )}
 
           {view === 'collection-editor' && (
-            <CollectionEditor
-              collection={editingCollection}
-              onBack={handleBack}
-              onSaveSuccess={handleCollectionSaveSuccess}
-            />
+            <ErrorBoundary>
+              <CollectionEditor
+                collection={editingCollection}
+                onBack={handleBack}
+                onSaveSuccess={handleCollectionSaveSuccess}
+              />
+            </ErrorBoundary>
           )}
 
           {view === 'entries' && selectedCollection && (
-            <EntriesList
-              collection={selectedCollection}
-              onBack={handleBack}
-              onCreate={handleCreateEntry}
-              onEdit={handleEditEntry}
-              onEditSchema={handleEditCollection}
-            />
+            <ErrorBoundary>
+              <EntriesList
+                collection={selectedCollection}
+                onBack={handleBack}
+                onCreate={handleCreateEntry}
+                onEdit={handleEditEntry}
+                onEditSchema={handleEditCollection}
+              />
+            </ErrorBoundary>
           )}
 
           {view === 'entry-editor' && selectedCollection && (
-            <EntryEditor
-              collection={selectedCollection}
-              entry={selectedEntry}
-              onBack={handleBack}
-              onSaveSuccess={handleEntrySaveSuccess}
-            />
+            <ErrorBoundary>
+              <EntryEditor
+                collection={selectedCollection}
+                entry={selectedEntry}
+                onBack={handleBack}
+                onSaveSuccess={handleEntrySaveSuccess}
+              />
+            </ErrorBoundary>
           )}
 
           {/* Single Types Section */}
           {view === 'single' && (
-            <SingleTypesList
-              singleTypes={singleTypes}
-              onSelectSingle={handleSelectSingle}
-              onCreateSingle={handleCreateSingle}
-              onEditSingleSchema={handleEditSingleSchema}
-              onRefresh={fetchSingleTypes}
-            />
+            <ErrorBoundary>
+              <SingleTypesList
+                singleTypes={singleTypes}
+                onSelectSingle={handleSelectSingle}
+                onCreateSingle={handleCreateSingle}
+                onEditSingleSchema={handleEditSingleSchema}
+                onRefresh={fetchSingleTypes}
+              />
+            </ErrorBoundary>
           )}
 
           {view === 'single-schema-editor' && (
-            <SingleTypeEditor
-              singleType={editingSingleSchema}
-              onBack={handleBack}
-              onSaveSuccess={handleSingleSchemaSaveSuccess}
-            />
+            <ErrorBoundary>
+              <SingleTypeEditor
+                singleType={editingSingleSchema}
+                onBack={handleBack}
+                onSaveSuccess={handleSingleSchemaSaveSuccess}
+              />
+            </ErrorBoundary>
           )}
 
           {view === 'single-content-editor' && selectedSingle && (
-            <SingleTypeContentEditor
-              singleType={selectedSingle}
-              onBack={handleBack}
-              onSaveSuccess={handleSingleContentSaveSuccess}
-            />
+            <ErrorBoundary>
+              <SingleTypeContentEditor
+                singleType={selectedSingle}
+                onBack={handleBack}
+                onSaveSuccess={handleSingleContentSaveSuccess}
+              />
+            </ErrorBoundary>
           )}
 
           {/* Media Library Section */}
           {view === 'media' && (
-            <MediaLibrary />
+            <ErrorBoundary>
+              <MediaLibrary />
+            </ErrorBoundary>
           )}
 
           {/* Files Library Section */}
           {view === 'files' && (
-            <FilesLibrary onBack={handleBack} />
+            <ErrorBoundary>
+              <FilesLibrary onBack={handleBack} />
+            </ErrorBoundary>
           )}
 
           {view === 'invitations' && user?.role === 'super_admin' && (
-            <Invitations />
+            <ErrorBoundary>
+              <Invitations />
+            </ErrorBoundary>
           )}
 
           {view === 'users' && user?.role === 'super_admin' && (
-            <Users currentUserId={user.id} />
+            <ErrorBoundary>
+              <Users currentUserId={user.id} />
+            </ErrorBoundary>
           )}
 
           {view === 'audit-logs' && user?.role === 'super_admin' && (
-            <AuditLogs />
+            <ErrorBoundary>
+              <AuditLogs />
+            </ErrorBoundary>
           )}
         </div>
       </main>
