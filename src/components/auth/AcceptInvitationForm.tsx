@@ -47,7 +47,7 @@ export default function AcceptInvitationForm() {
         if (data?.details && Array.isArray(data.details)) {
           setError(data.details.join('\n'));
         } else {
-          setError(data?.error || 'Impossible d'accepter l'invitation.');
+          setError(data?.error || 'Impossible d\'accepter l\'invitation.');
         }
         return;
       }
