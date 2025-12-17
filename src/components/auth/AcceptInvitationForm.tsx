@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PasswordStrength } from '@/components/ui/password-strength';
 
 export default function AcceptInvitationForm() {
   const [email, setEmail] = useState('');
@@ -42,7 +43,12 @@ export default function AcceptInvitationForm() {
 
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setError(data?.error || 'Impossible d’accepter l’invitation.');
+        // Show detailed validation errors if available
+        if (data?.details && Array.isArray(data.details)) {
+          setError(data.details.join('\n'));
+        } else {
+          setError(data?.error || 'Impossible d'accepter l'invitation.');
+        }
         return;
       }
 
@@ -107,6 +113,7 @@ export default function AcceptInvitationForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
               />
+              <PasswordStrength password={password} />
             </div>
 
             <div className="space-y-2">

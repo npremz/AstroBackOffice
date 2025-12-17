@@ -16,6 +16,7 @@ import Invitations from './Invitations';
 import Users from './Users';
 import AuditLogs from './AuditLogs';
 import TrashList from './TrashList';
+import Sessions from './Sessions';
 import { initCsrf } from '@/lib/api-client';
 
 interface Collection {
@@ -52,7 +53,7 @@ interface SingleType {
   updatedAt: Date;
 }
 
-type ViewType = 'dashboard' | 'collections' | 'collection-editor' | 'entries' | 'entry-editor' | 'single' | 'single-schema-editor' | 'single-content-editor' | 'media' | 'files' | 'invitations' | 'users' | 'audit-logs' | 'trash';
+type ViewType = 'dashboard' | 'collections' | 'collection-editor' | 'entries' | 'entry-editor' | 'single' | 'single-schema-editor' | 'single-content-editor' | 'media' | 'files' | 'invitations' | 'users' | 'audit-logs' | 'trash' | 'sessions';
 type Section = 'collections' | 'single' | 'media' | 'files' | 'admin';
 
 interface User {
@@ -399,7 +400,7 @@ export default function AdminDashboard() {
       setSelectedSingle(null);
       setEditingSingleSchema(null);
       updateURL('single', 'single');
-    } else if (view === 'invitations' || view === 'users' || view === 'audit-logs') {
+    } else if (view === 'invitations' || view === 'users' || view === 'audit-logs' || view === 'sessions') {
       setView('dashboard');
       setActiveSection('collections');
       updateURL('dashboard');
@@ -482,6 +483,12 @@ export default function AdminDashboard() {
     updateURL('audit-logs', 'admin');
   };
 
+  const handleNavigateToSessions = () => {
+    setActiveSection('admin');
+    setView('sessions');
+    updateURL('sessions', 'admin');
+  };
+
   const navigateToEntriesList = () => {
     if (!selectedCollection) return;
     setView('entries');
@@ -509,6 +516,11 @@ export default function AdminDashboard() {
 
     if (view === 'audit-logs') {
       breadcrumbs.push({ label: "Logs d'audit" });
+      return breadcrumbs;
+    }
+
+    if (view === 'sessions') {
+      breadcrumbs.push({ label: 'Sessions' });
       return breadcrumbs;
     }
 
@@ -605,12 +617,14 @@ export default function AdminDashboard() {
         onNavigateToInvitations={handleNavigateToInvitations}
         onNavigateToUsers={handleNavigateToUsers}
         onNavigateToAuditLogs={handleNavigateToAuditLogs}
+        onNavigateToSessions={handleNavigateToSessions}
         onNavigateToTrash={handleOpenTrash}
         onNavigateToFiles={handleNavigateToFiles}
         showInvitations={user?.role === 'super_admin'}
         isInvitationsView={view === 'invitations'}
         isUsersView={view === 'users'}
         isAuditLogsView={view === 'audit-logs'}
+        isSessionsView={view === 'sessions'}
         isTrashView={view === 'trash'}
         isFilesView={view === 'files'}
         isOpen={sidebarOpen}
@@ -730,6 +744,10 @@ export default function AdminDashboard() {
 
           {view === 'audit-logs' && user?.role === 'super_admin' && (
             <AuditLogs />
+          )}
+
+          {view === 'sessions' && (
+            <Sessions />
           )}
         </div>
       </main>

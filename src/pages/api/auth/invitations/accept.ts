@@ -3,19 +3,25 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { users } from '@/db/schema';
 import { consumeInvitation, normalizeEmail, hashPassword, markInvitationAccepted, createSession, setSessionCookie, publicUser } from '@/lib/auth';
+import { acceptInvitationSchema } from '@/lib/validation';
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    const { token, email, password, name } = await request.json();
+    const body = await request.json();
 
-    if (!token || !email || !password) {
-      return new Response(JSON.stringify({ error: 'Token, email, and password are required' }), {
+    // Validate input with strong password policy
+    const parseResult = acceptInvitationSchema.safeParse(body);
+    if (!parseResult.success) {
+      const errors = parseResult.error.errors.map(e => e.message);
+      return new Response(JSON.stringify({ error: 'Validation failed', details: errors }), {
         status: 400,
         headers: jsonHeaders
       });
     }
+
+    const { token, email, password, name } = parseResult.data;
 
     const invitation = await consumeInvitation(token);
     if (!invitation) {
