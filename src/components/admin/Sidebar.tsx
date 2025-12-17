@@ -1,4 +1,4 @@
-import { Layers, Package, Plus, ChevronRight, Menu, X, Mail, Home, Image, Users, LogOut, History, Trash2, FileText } from 'lucide-react';
+import { Layers, Package, Plus, ChevronRight, Menu, X, Mail, Home, Image, Users, LogOut, History, Trash2, FileText, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -43,11 +43,13 @@ interface Props {
   onNavigateToInvitations?: () => void;
   onNavigateToUsers?: () => void;
   onNavigateToAuditLogs?: () => void;
+  onNavigateToSessions?: () => void;
   onNavigateToTrash?: () => void;
   showInvitations?: boolean;
   isInvitationsView?: boolean;
   isUsersView?: boolean;
   isAuditLogsView?: boolean;
+  isSessionsView?: boolean;
   isTrashView?: boolean;
   isFilesView?: boolean;
   isOpen: boolean;
@@ -70,11 +72,13 @@ export default function Sidebar({
   onNavigateToInvitations,
   onNavigateToUsers,
   onNavigateToAuditLogs,
+  onNavigateToSessions,
   onNavigateToTrash,
   showInvitations,
   isInvitationsView,
   isUsersView,
   isAuditLogsView,
+  isSessionsView,
   isTrashView,
   isFilesView,
   isOpen,
@@ -431,6 +435,25 @@ export default function Sidebar({
 
           {/* Footer */}
           <div className="p-4 border-t border-border/50 space-y-2">
+            {onNavigateToSessions && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "w-full justify-start",
+                  isSessionsView
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-primary"
+                )}
+                onClick={() => {
+                  onNavigateToSessions();
+                  if (window.innerWidth < 1024) onToggle();
+                }}
+              >
+                <Monitor className="h-4 w-4 mr-2" />
+                <span className="font-medium">Sessions</span>
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"

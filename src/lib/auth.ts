@@ -1,6 +1,6 @@
 import type { AstroCookies } from 'astro';
 import { randomBytes, scryptSync, timingSafeEqual, createHmac } from 'crypto';
-import { and, eq, gt, lt } from 'drizzle-orm';
+import { and, eq, gt, lt, ne } from 'drizzle-orm';
 import { db } from '@/db';
 import { users, sessions, invitations } from '@/db/schema';
 
@@ -64,6 +64,29 @@ export async function createSession(userId: number, userAgent?: string | null, i
 
 export async function destroySession(token: string) {
   await db.delete(sessions).where(eq(sessions.tokenHash, hashToken(token)));
+}
+
+export async function destroyAllUserSessions(
+  userId: number,
+  exceptCurrentToken?: string
+): Promise<number> {
+  if (exceptCurrentToken) {
+    const currentHash = hashToken(exceptCurrentToken);
+    const result = await db
+      .delete(sessions)
+      .where(and(
+        eq(sessions.userId, userId),
+        ne(sessions.tokenHash, currentHash)
+      ))
+      .returning({ id: sessions.id });
+    return result.length;
+  }
+
+  const result = await db
+    .delete(sessions)
+    .where(eq(sessions.userId, userId))
+    .returning({ id: sessions.id });
+  return result.length;
 }
 
 export async function getSession(cookies: AstroCookies) {

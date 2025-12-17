@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import DOMPurify from 'isomorphic-dompurify';
+import { validatePassword, PASSWORD_POLICY, PASSWORD_ERRORS } from './password-policy';
 
 // Schema field definition
 export const schemaFieldSchema = z.object({
@@ -91,6 +92,31 @@ export const updateMediaSchema = z.object({
 export const loginSchema = z.object({
   email: z.string().email().max(255),
   password: z.string().min(1).max(200),
+});
+
+// Password schema with strong policy validation
+export const passwordSchema = z.string()
+  .min(PASSWORD_POLICY.minLength, PASSWORD_ERRORS.tooShort)
+  .max(PASSWORD_POLICY.maxLength, PASSWORD_ERRORS.tooLong)
+  .superRefine((password, ctx) => {
+    const result = validatePassword(password);
+    // Only add custom errors (not length errors which are already handled by min/max)
+    for (const error of result.errors) {
+      if (error !== PASSWORD_ERRORS.tooShort && error !== PASSWORD_ERRORS.tooLong) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: error,
+        });
+      }
+    }
+  });
+
+// Registration schema for accepting invitations
+export const acceptInvitationSchema = z.object({
+  token: z.string().min(1),
+  email: z.string().email().max(255),
+  password: passwordSchema,
+  name: z.string().max(100).optional(),
 });
 
 // Sanitize HTML content (for richtext fields)
