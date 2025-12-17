@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pencil, Trash2, Shield, ShieldCheck, Eye, LogOut } from 'lucide-react';
+import { Pencil, Trash2, Shield, ShieldCheck, Eye, LogOut, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -162,7 +162,10 @@ export default function Users({ currentUserId }: Props) {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground">Chargement...</div>
+            <div className="flex items-center justify-center py-12 gap-3 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <span className="font-medium">Chargement des utilisateurs...</span>
+            </div>
           ) : (
             <Table>
               <TableHeader>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,12 +32,14 @@ export default function Invitations() {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<typeof roles[number]['value']>('editor');
   const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [loadingList, setLoadingList] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [latestToken, setLatestToken] = useState<string | null>(null);
 
   const loadInvitations = async () => {
     setError(null);
+    setLoadingList(true);
     try {
       const response = await fetch('/api/auth/invitations');
       if (!response.ok) {
@@ -48,6 +50,8 @@ export default function Invitations() {
     } catch (err) {
       console.error(err);
       setError('Impossible de charger les invitations.');
+    } finally {
+      setLoadingList(false);
     }
   };
 
@@ -211,6 +215,12 @@ export default function Invitations() {
           <CardDescription>Suivez les invitations actives et expirées.</CardDescription>
         </CardHeader>
         <CardContent>
+          {loadingList ? (
+            <div className="flex items-center justify-center py-12 gap-3 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <span className="font-medium">Chargement des invitations...</span>
+            </div>
+          ) : (
           <Table>
             <TableHeader>
               <TableRow>
@@ -265,6 +275,7 @@ export default function Invitations() {
               ))}
             </TableBody>
           </Table>
+          )}
         </CardContent>
       </Card>
     </div>
